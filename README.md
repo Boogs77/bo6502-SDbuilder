@@ -1,118 +1,130 @@
 # bo6502-SDbuilder
 
-Strumenti per preparare la scheda SD del **BO6502** (computer homebrew 65C02): lo script `make_sd.py`
-impacchetta fino a 255 programmi in un'immagine RAW, senza filesystem, che il menu **SD PROGRAMS** del BIOS
-mostra a pagine da 9 voci e carica in RAM.
+Tools to prepare the SD card of the **BO6502** (homebrew 65C02 computer): the `make_sd.py` script packs up to
+255 programs into a RAW image, with no filesystem, that the BIOS **SD PROGRAMS** menu shows in pages of 9 entries
+and loads into RAM.
 
-## Contenuto
+## Contents
 
-| File | Descrizione |
+| File | Description |
 |---|---|
-| `make_sd.py` | Crea l'immagine `sd.img` o scrive direttamente sulla scheda |
-| `aggiorna_sd.py` | Prende i giochi da `../MiniVIC Games/bin` e le canzoni da `songs/`, li ordina (giochi in ordine alfabetico, poi canzoni) e lancia `make_sd.py`; `--dry-run` mostra solo cosa cambia |
-| `minivic.txt` / `songs.txt` | Nome nel menu di ogni gioco MiniVIC e di ogni canzone (`file.bin = Nome`) |
-| `programs.txt` | Elenco dei nomi del menu (uno per programma, separati da `;`) |
-| `prog.s` | Programma d'esempio in assembly ca65 (banner, test RAM con `PROGNUM=4`) |
-| `ex.cfg` | Configurazione ld65: codice a `$1000`, max `$7000` byte |
-| `bios_jt.inc` | Indirizzi fissi della jumptable del BIOS (`$FD00`–`$FD15`) |
-| `build.py` | Assembla `prog.s` in `program1..4.bin` (richiede cc65) |
-| `songs/` | Copia di sicurezza delle canzoni (Imperial March, The Final Countdown, Super Mario Bros) |
+| `make_sd.py` | Builds the `sd.img` image or writes directly to the card |
+| `update_sd.py` | Takes the games from `../MiniVIC Games/bin` and the songs from `songs/`, sorts them (games in alphabetical order, then songs), runs `make_sd.py` and copies `sd.img` to `../bo6502-emulator/public/`; `--dry-run` only shows what changes |
+| `minivic.txt` / `songs.txt` | Menu name of each MiniVIC game and of each song (`file.bin = Name`) |
+| `programs.txt` | List of menu names (one per program, separated by `;`) |
+| `prog.s` | Example program in ca65 assembly (banner, RAM test with `PROGNUM=4`) |
+| `ex.cfg` | ld65 configuration: code at `$1000`, at most `$7000` bytes |
+| `bios_jt.inc` | Fixed addresses of the BIOS jump table (`$FD00`–`$FD15`) |
+| `build.py` | Assembles `prog.s` into `program1..4.bin` (needs cc65) |
+| `songs/` | Backup copy of the songs (Imperial March, The Final Countdown, Super Mario Bros) |
 
-I binari dei programmi (`programN.bin`) e le immagini `.img` non sono nel repository: mettili nella
-cartella prima di lanciare lo script, oppure generali con `build.py`. Le canzoni in `songs/` vanno copiate
-come `programN.bin` nello slot voluto.
+The program binaries (`programN.bin`) and the `.img` images are not in the repository: put them in the folder
+before running the script, or generate them with `update_sd.py` or `build.py`. To use a song from `songs/` by
+hand, copy it as `programN.bin` into the slot you want.
 
-## Uso
+## Updating the SD with the MiniVIC games
 
 ```sh
-python3 make_sd.py                          # legge programs.txt e program1..N.bin -> sd.img
-python3 make_sd.py -n 4 -l nomi.txt         # solo i primi 4 programmi, nomi da nomi.txt
-python3 make_sd.py -o /dev/sdX --yes        # scrive DIRETTAMENTE sulla scheda (distrugge i dati!)
-python3 make_sd.py -o '\\.\PhysicalDrive2'  # Windows, da prompt Amministratore
+python3 update_sd.py --dry-run     # list the new SD and mark each entry NEW, UPDATED or REMOVED
+python3 update_sd.py               # rewrite program1..N.bin and programs.txt, build sd.img, copy it to the emulator
 ```
 
-Opzioni principali: `--run-all` (esegue tutti i programmi dopo il caricamento), `--keep-case` (non mette i nomi
-in maiuscolo), `--allow-missing` (lascia vuoto il blocco di un programma mancante), `--min-load` (indirizzo minimo
-di caricamento, default `0F00`), `--no-verify` (salta la rilettura di controllo). L'elenco completo si ottiene con `-h`.
+New games found in `../MiniVIC Games/bin` are appended to `minivic.txt` with a name derived from the file
+(`lunar_lander.bin` -> "Lunar Lander"): edit the name there and run the script again. The previous files are saved
+in `.backup/YYYYMMDD-HHMMSS/`. Arguments after `--` are passed to `make_sd.py`, e.g.
+`python3 update_sd.py -- -o '\\.\PhysicalDrive2'` (in that case `sd.img` is not copied to the emulator).
 
-Usa una SD standard capacity (fino a 2 GB): il BIOS indirizza la scheda a byte.
+## Usage of make_sd.py
 
-### Programmi
-
-Ogni programma può essere:
-- `programN.bin`: binario grezzo;
-- `programN.txt` / `programN.hex`: dump esadecimale in stile WozMon (`0FD0: 4C 27 11 ...`), da cui lo script
-  ricava anche l'indirizzo di caricamento.
-
-### Nomi (`programs.txt`)
-
-```
-[!]Nome[@LOAD[:ENTRY]]
+```sh
+python3 make_sd.py                          # reads programs.txt and program1..N.bin -> sd.img
+python3 make_sd.py -n 4 -l names.txt        # only the first 4 programs, names from names.txt
+python3 make_sd.py -o /dev/sdX --yes        # writes DIRECTLY to the card (destroys its data!)
+python3 make_sd.py -o '\\.\PhysicalDrive2'  # Windows, from an Administrator prompt
 ```
 
-- `!`: il programma viene eseguito subito dopo il caricamento (nel menu appare come `N>`; senza `!` appare come `N.` e viene solo caricato);
-- `@LOAD`: indirizzo RAM di caricamento in esadecimale (default `1000`);
-- `:ENTRY`: indirizzo di esecuzione (default `1000` se cade nell'immagine, altrimenti `LOAD`).
+Main options: `--run-all` (run every program after loading), `--keep-case` (do not upper-case the names),
+`--allow-missing` (leave the block of a missing program empty), `--min-load` (lowest load address, default
+`0F00`), `--no-verify` (skip the read-back check). `-h` prints the full list.
 
-Esempio: `Banner; !Arcade Tank@0FD0; Test RAM@1000`
+Use a standard capacity SD (up to 2 GB): the BIOS addresses the card by byte.
 
-Prima di scrivere, lo script controlla dimensione (max 28 KB), limiti della RAM (`$0F00`–`$7FFF`) ed entry point.
+### Programs
 
-## Formato della SD
+Each program can be:
+- `programN.bin`: raw binary;
+- `programN.txt` / `programN.hex`: WozMon-style hex dump (`0FD0: 4C 27 11 ...`), from which the script also takes
+  the load address.
+
+### Names (`programs.txt`)
 
 ```
-offset        contenuto
-$00000000     blocco programma 1 (32 KB)
-$00008000     blocco programma 2
+[!]Name[@LOAD[:ENTRY]]
+```
+
+- `!`: the program runs right after loading (shown as `N>` in the menu; without `!` it is shown as `N.` and only loaded);
+- `@LOAD`: RAM load address in hex (default `1000`);
+- `:ENTRY`: start address (default `1000` if it falls inside the image, otherwise `LOAD`).
+
+Example: `Banner; !Arcade Tank@0FD0; Test RAM@1000`
+
+Before writing, the script checks the size (at most 28 KB), the RAM limits (`$0F00`–`$7FFF`) and the entry point.
+
+## SD format
+
+```
+offset        contents
+$00000000     block of program 1 (32 KB)
+$00008000     block of program 2
 ...           (N-1) * $8000
 ```
 
-Ogni blocco da 32 KB è fatto così:
+Each 32 KB block looks like this:
 
-| Offset nel blocco | Contenuto |
+| Offset in the block | Contents |
 |---|---|
-| `+$0000` (settore 0) | pagina di directory P, nel blocco P (solo per i primi blocchi) |
-| `+$0200` (settore 1) | riga di info ASCII (slot, file, load, len, entry, CRC32) |
-| `+$1000` – `+$7FFF` | byte del programma (max `$7000`) |
+| `+$0000` (sector 0) | directory page P, in block P (only in the first blocks) |
+| `+$0200` (sector 1) | ASCII info line (slot, file, load, len, entry, CRC32) |
+| `+$1000` – `+$7FFF` | program bytes (at most `$7000`) |
 
-La zona riservata `+$0000..+$0FFF` non viene mai copiata in RAM. Il BIOS scrive esattamente
-`[load, load+len)` e lascia intatto il resto della memoria.
+The reserved area `+$0000..+$0FFF` is never copied to RAM. The BIOS writes exactly `[load, load+len)` and leaves
+the rest of the memory untouched.
 
-### Settore di directory (versione 3)
+### Directory sector (version 3)
 
-| Offset | Dimensione | Campo |
+| Offset | Size | Field |
 |---|---|---|
 | `0` | 4 | magic `"BOGS"` |
-| `4` | 1 | versione (`3`) |
-| `5` | 1 | programmi in questa pagina (1..9) |
-| `6` | 9 | flag di ogni voce (bit0 = esegui) |
-| `15` | 1 | numero totale di programmi |
-| `16 + i*8` | 8 | load (lo,hi), lunghezza (lo,hi), entry (lo,hi), 0, 0 |
-| `96 + i*32` | 32 | nome ASCII (max 31 caratteri + `$00`) |
+| `4` | 1 | version (`3`) |
+| `5` | 1 | programs on this page (1..9) |
+| `6` | 9 | flags of each entry (bit0 = run) |
+| `15` | 1 | total number of programs |
+| `16 + i*8` | 8 | load (lo,hi), length (lo,hi), entry (lo,hi), 0, 0 |
+| `96 + i*32` | 32 | ASCII name (at most 31 characters + `$00`) |
 
-Dal menu si cambia pagina con **A**/**D** e si sceglie il programma con **1**..**9**.
+In the menu, **A**/**D** change page and **1**..**9** choose the program.
 
-## Scrivere programmi
+## Writing programs
 
-`bios_jt.inc` espone le routine del BIOS:
+`bios_jt.inc` exposes the BIOS routines:
 
-| Simbolo | Indirizzo | Funzione |
+| Symbol | Address | Function |
 |---|---|---|
-| `JT_CHROUT` | `$FD00` | stampa il carattere in A |
-| `JT_CHRIN_NOECHO` | `$FD03` | C=1 e A=tasto, C=0 se nessun tasto |
-| `JT_RESET_TERM` | `$FD06` | reset del terminale |
-| `JT_INIT_CRT` | `$FD09` | inizializza il video |
-| `JT_LOAD_RUN_SLOT` | `$FD0C` | carica ed esegue lo slot in A (JMP, non ritorna) |
-| `JT_SHOW_MENU` | `$FD0F` | torna al menu del BIOS (JMP, non ritorna) |
-| `JT_INIT_SDCARD` | `$FD12` | carica lo slot in A e ritorna (C=1 errore) |
-| `JT_FLUSH_KB` | `$FD15` | svuota la tastiera (~0,5 s) |
+| `JT_CHROUT` | `$FD00` | prints the character in A |
+| `JT_CHRIN_NOECHO` | `$FD03` | C=1 and A=key, C=0 if no key |
+| `JT_RESET_TERM` | `$FD06` | resets the terminal |
+| `JT_INIT_CRT` | `$FD09` | initialises the video |
+| `JT_LOAD_RUN_SLOT` | `$FD0C` | loads and runs the slot in A (JMP, does not return) |
+| `JT_SHOW_MENU` | `$FD0F` | back to the BIOS menu (JMP, does not return) |
+| `JT_INIT_SDCARD` | `$FD12` | loads the slot in A and returns (C=1 error) |
+| `JT_FLUSH_KB` | `$FD15` | flushes the keyboard (~0.5 s) |
 
-Compilazione dell'esempio con [cc65](https://cc65.github.io/):
+Building the example with [cc65](https://cc65.github.io/):
 
 ```sh
 ca65 -D PROGNUM=1 prog.s -o p1.o
 ld65 -C ex.cfg p1.o -o program1.bin
 ```
 
-> **Attenzione:** `build.py` sovrascrive `program1.bin`..`program4.bin`. Se in quegli slot hai già altri programmi,
-> lancialo in una cartella separata.
+> **Warning:** `build.py` overwrites `program1.bin`..`program4.bin`. If those slots already hold other programs,
+> run it in a separate folder.

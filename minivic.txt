@@ -1,5 +1,5 @@
-# Giochi presi da "MiniVIC Games/bin": file = nome nel menu (senza " - GAME", aggiunto da aggiorna_sd.py).
-# I giochi nuovi vengono aggiunti in fondo da aggiorna_sd.py con un nome ricavato dal file: correggilo qui se serve.
+# Games taken from "MiniVIC Games/bin": file = menu name (without " - GAME", added by update_sd.py).
+# update_sd.py appends new games at the end with a name derived from the file: fix it here if needed.
 1vs1.bin = 1vs1
 asteroids.bin = Asteroids
 breakout.bin = Breakout

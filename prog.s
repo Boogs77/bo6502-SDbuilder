@@ -1,5 +1,5 @@
-; Programma d'esempio per la SD BO6502 - si carica a $1000 (usa 'ca65 -D PROGNUM=n').
-; PROGNUM=4 aggiunge un test della RAM $1200-$7FFF (pattern = lo(addr) XOR hi(addr)).
+; Example program for the BO6502 SD - loads at $1000 (use 'ca65 -D PROGNUM=n').
+; PROGNUM=4 adds a RAM test of $1200-$7FFF (pattern = lo(addr) XOR hi(addr)).
 .setcpu "65C02"
 .include "bios_jt.inc"
 .ifndef PROGNUM
@@ -33,14 +33,14 @@ done:
     lda #<msg_key
     ldx #>msg_key
     jsr print
-    jsr JT_FLUSH_KB          ; scarta eventuali scancode spuri (es. rilascio del tasto del menu)
+    jsr JT_FLUSH_KB          ; drop stray scancodes (e.g. the release of the menu key)
 wait:
     jsr JT_CHRIN_NOECHO
     bcc wait
     jmp JT_SHOW_MENU
 
-; stampa stringa 0-terminata: A=lo, X=hi. CHROUT puo' sporcare tutti i registri,
-; quindi il puntatore sta in RAM (auto-modifica dell'operando), non nei registri.
+; prints a 0-terminated string: A=lo, X=hi. CHROUT may clobber every register,
+; so the pointer lives in RAM (self-modified operand), not in registers.
 print:
     sta @ld+1
     stx @ld+2
@@ -59,7 +59,7 @@ print:
 idx: .byte 0
 
 .if PROGNUM = 4
-; Controlla $1200-$7FFF: atteso lo(addr) EOR hi(addr). C=1 se errore. Senza zero page.
+; Checks $1200-$7FFF: expected lo(addr) EOR hi(addr). C=1 on error. No zero page.
 ramcheck:
     ldy #$12
 @pg:
