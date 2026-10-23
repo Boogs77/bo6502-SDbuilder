@@ -11,7 +11,8 @@ songs.txt (" - SONG", loaded at $1000).
   songs.txt    file.bin = Name   songs in songs/
 
 Before overwriting, the old programN.bin, programs.txt and sd.img are copied to .backup/YYYYMMDD-HHMMSS/.
-Afterwards sd.img is also copied to ../bo6502-emulator/public/sd.img, which the emulator loads at startup.
+Afterwards sd.img is also copied to ../bo6502-emulator/public/sd.img, which the emulator loads at startup, and
+the songs to ../bo6502-emulator/public/songs/.
 
 Examples:
   python3 update_sd.py --dry-run     # only show what would change
@@ -145,13 +146,18 @@ def main():
     if rc:
         sys.exit(rc)
 
-    # same SD in the emulator (public/sd.img, loaded at startup), only when make_sd.py wrote sd.img
+    # same SD in the emulator (public/sd.img, loaded at startup) plus the songs it contains (public/songs),
+    # only when make_sd.py wrote sd.img
     img = os.path.join(HERE, "sd.img")
     pub = os.path.join(a.emulator, "public")
     if a.emulator and "-o" not in extra and "--output" not in extra:
         if os.path.isdir(pub):
             shutil.copyfile(img, os.path.join(pub, "sd.img"))
             print(f"Also copied to {os.path.normpath(os.path.join(pub, 'sd.img'))}")
+            os.makedirs(os.path.join(pub, "songs"), exist_ok=True)
+            for f, _ in songs:
+                shutil.copyfile(os.path.join(HERE, "songs", f), os.path.join(pub, "songs", f))
+            print(f"Songs copied to {os.path.normpath(os.path.join(pub, 'songs'))}: {', '.join(f for f, _ in songs)}")
         else:
             print(f"WARNING: emulator not found ({os.path.normpath(pub)}): sd.img not copied")
 

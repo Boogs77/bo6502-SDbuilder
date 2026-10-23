@@ -9,7 +9,7 @@ and loads into RAM.
 | File | Description |
 |---|---|
 | `make_sd.py` | Builds the `sd.img` image or writes directly to the card |
-| `update_sd.py` | Takes the games from `../MiniVIC Games/bin` and the songs from `songs/`, sorts them (games in alphabetical order, then songs), runs `make_sd.py` and copies `sd.img` to `../bo6502-emulator/public/`; `--dry-run` only shows what changes |
+| `update_sd.py` | Takes the games from `../MiniVIC Games/bin` and the songs from `songs/`, sorts them (games in alphabetical order, then songs), runs `make_sd.py` and copies `sd.img` and the songs to `../bo6502-emulator/public/` (the emulator's default SD); `--dry-run` only shows what changes |
 | `minivic.txt` / `songs.txt` | Menu name of each MiniVIC game and of each song (`file.bin = Name`) |
 | `programs.txt` | List of menu names (one per program, separated by `;`) |
 | `prog.s` | Example program in ca65 assembly (banner, RAM test with `PROGNUM=4`) |

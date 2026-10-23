@@ -20,9 +20,10 @@ All the work is done by `update_sd.py`, in the project folder. Never renumber th
    - saves the old `program*.bin`, `programs.txt` and `sd.img` in `.backup/<date-time>/`;
    - rewrites `program1..N.bin` and `programs.txt`;
    - runs `make_sd.py`, which builds `sd.img` and reads it back to verify it;
-   - copies `sd.img` to `../bo6502-emulator/public/sd.img`, which the emulator loads at startup. With
-     `--emulator ''` it skips the copy.
-5. **Check.** The output must contain `Verify OK` and then `Also copied to ...\bo6502-emulator\public\sd.img`.
+   - copies `sd.img` to `../bo6502-emulator/public/sd.img`, which the emulator loads at startup, and the songs to
+     `../bo6502-emulator/public/songs/`. With `--emulator ''` it skips the copy.
+5. **Check.** The output must contain `Verify OK`, `Also copied to ...\bo6502-emulator\public\sd.img` and
+   `Songs copied to ...`.
    If `make_sd.py` fails (program too large, address outside RAM, ...), report the message as it is, without
    changing the MiniVIC binaries.
 
@@ -32,9 +33,11 @@ All the work is done by `update_sd.py`, in the project folder. Never renumber th
   explicit request from the user naming the device: it erases everything on the card.
 - No commit or push unless the user asks. When they do, the files to commit here are `programs.txt` and
   `minivic.txt` (the `.bin` and `.img` files are excluded by `.gitignore`).
-- In the emulator the SD is published by committing and pushing `public/sd.img` in the `bo6502-emulator` repo:
-  the push redeploys the site on GitHub Pages. Do it only when the user asks, and commit only `public/sd.img`,
-  because the emulator repo may contain changes from other sessions.
+- The SD generated here must be identical to the one the online emulator loads by default. The user has approved
+  publishing it: after a new SD, commit and push here (`programs.txt`, `minivic.txt`, any new song) and in the
+  `bo6502-emulator` repo (public repo, the push redeploys GitHub Pages) commit only `public/sd.img` and
+  `public/songs/`, because that repo may contain changes from other sessions. Then wait for the Pages deploy,
+  download `https://boogs77.github.io/BO6502-miniVIC-emulator/sd.img` and compare it with `sd.img` (`cmp`).
 - Everything written to files and commit messages is in English; talk to the user in Italian. In the final summary
   list: games added, updated or removed, total number of programs and menu pages, verify result.
 - Update the session diary with the `session-log` skill.
