@@ -10,3 +10,4 @@ space_invaders.bin = Space Invaders
 tank.bin = The Final Countdown
 the_warriors.bin = The Warriors
 warlords.bin = Warlords
+defender.bin = Defender

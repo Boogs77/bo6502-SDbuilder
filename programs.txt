@@ -2,6 +2,7 @@
 !Asteroids - GAME@0FD0;
 !Breakout - GAME@0FD0;
 !Centipede - GAME@0FD0;
+!Defender - GAME@0FD0;
 !Lunar Lander - GAME@0FD0;
 !Missile Command - GAME@0FD0;
 !Space Invaders - GAME@0FD0;
