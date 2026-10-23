@@ -7,6 +7,7 @@
 !Space Invaders - GAME@0FD0;
 !The Final Countdown - GAME@0FD0;
 !The Warriors - GAME@0FD0;
+!Warlords - GAME@0FD0;
 !Imperial March - SONG;
 !The Final Countdown - SONG;
 !Super Mario Bros - SONG;

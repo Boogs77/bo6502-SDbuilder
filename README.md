@@ -9,6 +9,8 @@ mostra a pagine da 9 voci e carica in RAM.
 | File | Descrizione |
 |---|---|
 | `make_sd.py` | Crea l'immagine `sd.img` o scrive direttamente sulla scheda |
+| `aggiorna_sd.py` | Prende i giochi da `../MiniVIC Games/bin` e le canzoni da `songs/`, li ordina (giochi in ordine alfabetico, poi canzoni) e lancia `make_sd.py`; `--dry-run` mostra solo cosa cambia |
+| `minivic.txt` / `songs.txt` | Nome nel menu di ogni gioco MiniVIC e di ogni canzone (`file.bin = Nome`) |
 | `programs.txt` | Elenco dei nomi del menu (uno per programma, separati da `;`) |
 | `prog.s` | Programma d'esempio in assembly ca65 (banner, test RAM con `PROGNUM=4`) |
 | `ex.cfg` | Configurazione ld65: codice a `$1000`, max `$7000` byte |
