@@ -12,3 +12,4 @@ the_warriors.bin = The Warriors
 warlords.bin = Warlords
 defender.bin = Defender
 radar_scope.bin = Radar Scope
+space_firebird.bin = Space Firebird
