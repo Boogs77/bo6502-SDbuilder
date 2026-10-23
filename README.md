@@ -31,7 +31,9 @@ python3 update_sd.py               # rewrite program1..N.bin and programs.txt, b
 
 New games found in `../MiniVIC Games/bin` are appended to `minivic.txt` with a name derived from the file
 (`lunar_lander.bin` -> "Lunar Lander"): edit the name there and run the script again. The previous files are saved
-in `.backup/YYYYMMDD-HHMMSS/`. Arguments after `--` are passed to `make_sd.py`, e.g.
+in `.backup/YYYYMMDD-HHMMSS/`. The emulator's daily workflow runs the same script from this repo (through a
+read-only deploy key) with the games published on `github.com/Boogs77/miniVIC_games`, so the default SD online
+is rebuilt from what is pushed here. Arguments after `--` are passed to `make_sd.py`, e.g.
 `python3 update_sd.py -- -o '\\.\PhysicalDrive2'` (in that case `sd.img` is not copied to the emulator).
 
 ## Usage of make_sd.py

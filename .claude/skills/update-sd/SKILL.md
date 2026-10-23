@@ -38,6 +38,11 @@ All the work is done by `update_sd.py`, in the project folder. Never renumber th
   `bo6502-emulator` repo (public repo, the push redeploys GitHub Pages) commit only `public/sd.img` and
   `public/songs/`, because that repo may contain changes from other sessions. Then wait for the Pages deploy,
   download `https://boogs77.github.io/BO6502-miniVIC-emulator/sd.img` and compare it with `sd.img` (`cmp`).
+- The emulator's daily workflow `sync-games.yml` also runs `update_sd.py` from this repo (read-only deploy key,
+  secret `SDBUILDER_DEPLOY_KEY`) with the games of `github.com/Boogs77/miniVIC_games`, and publishes the SD if it
+  changed. So: push `minivic.txt`, `songs.txt` and `songs/` here, otherwise the next daily run rebuilds the online
+  SD from the old ones. Games that exist only in the local `MiniVIC Games` folder and are not pushed to
+  miniVIC_games will be missing online.
 - Everything written to files and commit messages is in English; talk to the user in Italian. In the final summary
   list: games added, updated or removed, total number of programs and menu pages, verify result.
 - Update the session diary with the `session-log` skill.
