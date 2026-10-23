@@ -14,9 +14,11 @@ mostra a pagine da 9 voci e carica in RAM.
 | `ex.cfg` | Configurazione ld65: codice a `$1000`, max `$7000` byte |
 | `bios_jt.inc` | Indirizzi fissi della jumptable del BIOS (`$FD00`–`$FD15`) |
 | `build.py` | Assembla `prog.s` in `program1..4.bin` (richiede cc65) |
+| `songs/` | Copia di sicurezza delle canzoni (Imperial March, The Final Countdown, Super Mario Bros) |
 
 I binari dei programmi (`programN.bin`) e le immagini `.img` non sono nel repository: mettili nella
-cartella prima di lanciare lo script, oppure generali con `build.py`.
+cartella prima di lanciare lo script, oppure generali con `build.py`. Le canzoni in `songs/` vanno copiate
+come `programN.bin` nello slot voluto.
 
 ## Uso
 
