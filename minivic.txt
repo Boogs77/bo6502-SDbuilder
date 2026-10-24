@@ -14,3 +14,4 @@ defender.bin = Defender
 radar_scope.bin = Radar Scope
 space_firebird.bin = Space Firebird
 moon_cresta.bin = Moon Cresta
+stargate.bin = Stargate
