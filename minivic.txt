@@ -1,4 +1,5 @@
 # Games taken from "MiniVIC Games/bin": file = menu name (without " - GAME", added by update_sd.py).
+# A '+' before the file pins the game at the top of the menu (pinned games keep this file's order, the rest is alphabetical).
 # update_sd.py appends new games at the end with a name derived from the file: fix it here if needed.
 1vs1.bin = 1vs1
 asteroids.bin = Asteroids
@@ -7,7 +8,7 @@ centipede.bin = Centipede
 lunar_lander.bin = Lunar Lander
 missile_command.bin = Missile Command
 space_invaders.bin = Space Invaders
-tank.bin = The Final Countdown
++tank.bin = The Final Countdown
 the_warriors.bin = The Warriors
 warlords.bin = Warlords
 defender.bin = Defender

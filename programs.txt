@@ -1,15 +1,17 @@
+!The Final Countdown - GAME@0FD0;
 !1vs1 - GAME@0FD0;
 !Asteroids - GAME@0FD0;
 !Breakout - GAME@0FD0;
 !Centipede - GAME@0FD0;
 !Defender - GAME@0FD0;
+!Gravitar - GAME@0FD0;
 !Lunar Lander - GAME@0FD0;
 !Missile Command - GAME@0FD0;
 !Moon Cresta - GAME@0FD0;
 !Radar Scope - GAME@0FD0;
 !Space Firebird - GAME@0FD0;
 !Space Invaders - GAME@0FD0;
-!The Final Countdown - GAME@0FD0;
+!Stargate - GAME@0FD0;
 !The Warriors - GAME@0FD0;
 !Warlords - GAME@0FD0;
 !Imperial March - SONG;
