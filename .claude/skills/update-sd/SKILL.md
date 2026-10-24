@@ -10,7 +10,7 @@ All the work is done by `update_sd.py`, in the project folder. Never renumber th
 ## Steps
 
 1. **Preview.** Run `python update_sd.py --dry-run` from the project folder. The script lists the programs of the
-   new SD in menu order: first the games pinned with `+` in `minivic.txt`, then the other games in alphabetical order, then the songs. Next to each entry it prints NEW,
+   new SD in menu order: first the games in alphabetical order, then the songs. Next to each entry it prints NEW,
    UPDATED or REMOVED compared with the current SD.
 2. **If there are 0 differences**, tell the user and stop: the SD is already up to date.
 3. **If there are new games**, the script derives the name from the file (e.g. `lunar_lander.bin` -> "Lunar Lander").
@@ -49,6 +49,6 @@ All the work is done by `update_sd.py`, in the project folder. Never renumber th
 
 ## Files
 
-- `minivic.txt`: `file.bin = Name` for each MiniVIC game; `+file.bin = Name` pins it at the top of the menu (moving games does not count as a difference in the preview: regenerate anyway). The menu name becomes `NAME - GAME` and the game is loaded at `$0FD0`.
+- `minivic.txt`: `file.bin = Name` for each MiniVIC game. The menu name becomes `NAME - GAME` and the game is loaded at `$0FD0`.
 - `songs.txt`: `file.bin = Name` for the songs in `songs/`, in menu order. The name becomes `NAME - SONG` and the song is loaded at `$1000`.
 - Different games folder: `--minivic PATH`.

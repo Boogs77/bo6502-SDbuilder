@@ -3,12 +3,11 @@
 update_sd.py - takes the games from "MiniVIC Games/bin" and the songs from songs/, rebuilds program1..N.bin and
 programs.txt and regenerates the SD with make_sd.py.
 
-Menu order: first the pinned games in the order of minivic.txt, then the other games in alphabetical order
-(" - GAME", loaded at $0FD0), then the songs in the order of songs.txt (" - SONG", loaded at $1000).
+Menu order: first the games in alphabetical order (" - GAME", loaded at $0FD0), then the songs in the order of
+songs.txt (" - SONG", loaded at $1000).
 
   minivic.txt  file.bin = Name   known games; new .bin files are appended with a name derived from the file
-                                 (e.g. lunar_lander.bin -> "Lunar Lander"); '+file.bin = Name' pins the game
-                                 at the top of the menu
+                                 (e.g. lunar_lander.bin -> "Lunar Lander")
   songs.txt    file.bin = Name   songs in songs/
 
 Before overwriting, the old programN.bin, programs.txt and sd.img are copied to .backup/YYYYMMDD-HHMMSS/.
@@ -82,15 +81,13 @@ def main():
 
     map_path = os.path.join(HERE, "minivic.txt")
     known = read_map(map_path)
-    pinned = [f[1:].strip() for f, _ in known if f.startswith("+")]
-    known = [(f.lstrip("+").strip(), nm) for f, nm in known]
     known_files = {f for f, _ in known}
     found = sorted(os.path.basename(p) for p in glob.glob(os.path.join(a.minivic, "*.bin")))
     added = [(f, name_from_file(f)) for f in found if f not in known_files]
     missing = [f for f, _ in known if f not in found]
 
     games = [(f, nm) for f, nm in known + added if f in found]
-    games.sort(key=lambda g: (pinned.index(g[0]) if g[0] in pinned else len(pinned), g[1].upper()))
+    games.sort(key=lambda g: g[1].upper())
     songs = read_map(os.path.join(HERE, "songs.txt"))
     for f, _ in songs:
         if not os.path.isfile(os.path.join(HERE, "songs", f)):
