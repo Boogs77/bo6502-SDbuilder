@@ -16,3 +16,4 @@ space_firebird.bin = Space Firebird
 moon_cresta.bin = Moon Cresta
 stargate.bin = Stargate
 gravitar.bin = Gravitar
+quantum.bin = Quantum
