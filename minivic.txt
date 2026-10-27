@@ -20,3 +20,4 @@ quantum.bin = Quantum
 joust.bin = Joust
 exerion.bin = Exerion
 bubbles.bin = Bubbles
+times_tables.bin = Times Tables
