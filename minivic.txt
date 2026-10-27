@@ -18,3 +18,4 @@ stargate.bin = Stargate
 gravitar.bin = Gravitar
 quantum.bin = Quantum
 joust.bin = Joust
+exerion.bin = Exerion
