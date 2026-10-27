@@ -3,7 +3,9 @@
 !Breakout - GAME@0FD0;
 !Centipede - GAME@0FD0;
 !Defender - GAME@0FD0;
+!Exerion - GAME@0FD0;
 !Gravitar - GAME@0FD0;
+!Joust - GAME@0FD0;
 !Lunar Lander - GAME@0FD0;
 !Missile Command - GAME@0FD0;
 !Moon Cresta - GAME@0FD0;
