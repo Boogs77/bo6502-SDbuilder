@@ -12,6 +12,7 @@
 !Moon Cresta - GAME@0FD0;
 !Quantum - GAME@0FD0;
 !Radar Scope - GAME@0FD0;
+!Robert - GAME@0FD0;
 !Space Firebird - GAME@0FD0;
 !Space Invaders - GAME@0FD0;
 !Stargate - GAME@0FD0;
