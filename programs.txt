@@ -4,6 +4,7 @@
 !Bubbles - GAME@0FD0;
 !Centipede - GAME@0FD0;
 !Cloud Raider - GAME@0FD0;
+!Crystal Gardens - GAME@0FD0;
 !Defender - GAME@0FD0;
 !Exerion - GAME@0FD0;
 !Gravitar - GAME@0FD0;
