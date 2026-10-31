@@ -17,6 +17,7 @@
 !Robert - GAME@0FD0;
 !Space Firebird - GAME@0FD0;
 !Space Invaders - GAME@0FD0;
+!Special Forces - GAME@0FD0;
 !Stargate - GAME@0FD0;
 !The Final Countdown - GAME@0FD0;
 !The Warriors - GAME@0FD0;
