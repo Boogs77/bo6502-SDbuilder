@@ -7,7 +7,11 @@ Layout (RAW, no filesystem; standard capacity SD <= 2GB, byte addressing):
   Page P (P = 0, 1, ...) is in the FIRST SECTOR of 32KB block number P, i.e. at offset P * $8000:
       +0..3   "BOGS"   +4 version (3)   +5 number of programs ON THIS PAGE (1..9)
       +6..14  flags of entries 0..8 (bit0 = RUN)   +15 TOTAL number of programs
-      +16+i*8 parameters of entry i: load address (lo,hi), length (lo,hi), entry (lo,hi), 0, 0
+      +16+i*8 parameters of entry i: load address (lo,hi), length (lo,hi), entry (lo,hi), type, serial name length
+              type: 0 unknown, 1 GAME, 2 APP, 3 TOOL. When a program is run, the BIOS KEYB/SD sends
+              "[TYPE] Name" on the serial line, using only the first <serial name length> characters of the
+              name (0 = whole name): the " - GAME" suffix shown in the menu is left out. The standard BIOS
+              ignores both bytes (they used to be 0).
       +96+i*32 name of entry i (ASCII, max 31 chars + $00)
   The BIOS menu shows one page at a time (keys A/D to change page, 1..9 to choose).
   program N (N = 1..255) -> 32KB block at offset (N-1) * $8000
@@ -21,11 +25,13 @@ Programs: programN.bin = raw binary. Alternatively programN.txt / programN.hex =
 
 Names: text file (default programs.txt in the programs folder, or -l FILE), names separated by ';'
 (also over several lines). The first name is program 1, the second program 2, ...
-    [!]Name[@LOAD[:ENTRY]]
+    [!][[TYPE]]Name[@LOAD[:ENTRY]]
   !      program RUN right after loading ("N>" in the menu); without '!' it is only loaded ("N.")
+  [TYPE] GAME, APP or TOOL (see the directory above). Without it, the type comes from a " - GAME",
+         " - APP" or " - TOOL" suffix of the name; otherwise it is 0 (no serial line)
   @LOAD  RAM load address in hex (default 1000; not needed for .txt/.hex dumps)
   :ENTRY start address (default: 1000 if it falls inside the loaded image, otherwise LOAD)
-Example programs.txt:   Banner; !Arcade Tank@0FD0; Test RAM@1000
+Example programs.txt:   Banner; !Arcade Tank - GAME@0FD0; ![TOOL]Test RAM@1000
 With --run-all every program is run after loading.
 
 Examples:
@@ -53,6 +59,8 @@ DIR_NAMES  = 96              # names: 32 bytes per program
 DIR_ESIZE  = 32              # 31 characters + $00
 NAME_MAX   = DIR_ESIZE - 1
 DEFAULT_LOAD = 0x1000
+TYPES      = {"GAME": 1, "APP": 2, "TOOL": 3}   # directory byte +6 of the entry parameters
+TYPE_NAMES = {v: k for k, v in TYPES.items()}
 
 def parse_hex(s, what):
     try:
@@ -64,7 +72,7 @@ def parse_hex(s, what):
     return v
 
 def read_names(path, keep_case):
-    """Reads [!]Name[@LOAD[:ENTRY]] separated by ';' (and/or newlines)."""
+    """Reads [!][[TYPE]]Name[@LOAD[:ENTRY]] separated by ';' (and/or newlines)."""
     raw = open(path, "r", encoding="utf-8-sig", errors="replace").read()
     items = []
     for part in raw.replace("\r", "\n").replace("\n", ";").split(";"):
@@ -74,6 +82,13 @@ def read_names(path, keep_case):
         run = p.startswith("!")
         if run:
             p = p[1:].strip()
+        ptype = None
+        m = re.match(r"\[\s*([A-Za-z]+)\s*\]", p)
+        if m:
+            ptype = TYPES.get(m.group(1).upper())
+            if ptype is None:
+                sys.exit(f"ERROR: unknown type [{m.group(1)}] in '{p}' (use {', '.join(TYPES)})")
+            p = p[m.end():].strip()
         load = entry = None
         m = re.search(r"@\s*([0-9A-Fa-f]+)\s*(?::\s*([0-9A-Fa-f]+))?\s*$", p)
         if m:
@@ -89,8 +104,21 @@ def read_names(path, keep_case):
         if len(p) > NAME_MAX:
             print(f"WARNING: name too long, truncated to {NAME_MAX} characters: {p!r}")
             p = p[:NAME_MAX]
-        items.append({"name": p, "run": run, "load": load, "entry": entry})
+        ptype, serlen = serial_name(p, ptype)
+        items.append({"name": p, "run": run, "load": load, "entry": entry, "type": ptype, "serlen": serlen})
     return items
+
+def serial_name(name, ptype):
+    """(type, serial name length): a " - GAME"/" - APP"/" - TOOL" suffix gives the type when it is not
+    given, and is left out of the serial line when it matches the type."""
+    m = re.search(r"\s+-\s+([A-Za-z]+)$", name)
+    if m and m.group(1).upper() in TYPES:
+        t = TYPES[m.group(1).upper()]
+        if ptype is None:
+            ptype = t
+        if ptype == t:
+            return ptype, m.start()
+    return ptype or 0, 0
 
 def read_hexdump(path):
     """WozMon-style dump 'ADDR: HH HH ...' -> (start_address, bytes). Error if not contiguous."""
@@ -135,6 +163,8 @@ def build_directory(progs, page, total):
         d[o:o + 2] = p["load"].to_bytes(2, "little")
         d[o + 2:o + 4] = p["len"].to_bytes(2, "little")
         d[o + 4:o + 6] = p["entry"].to_bytes(2, "little")
+        d[o + 6] = p["type"]
+        d[o + 7] = p["serlen"]
         o = DIR_NAMES + i * DIR_ESIZE
         d[o:o + len(p["name"])] = p["name"].encode("ascii")    # the rest stays $00
     return bytes(d)
@@ -185,10 +215,11 @@ def main():
         print(f"WARNING: {len(items)} names but only {num} programs: ignoring the extra names")
         items = items[:num]
     while len(items) < num:
-        items.append({"name": f"PROGRAM {len(items)+1}", "run": False, "load": None, "entry": None})
+        items.append({"name": f"PROGRAM {len(items)+1}", "run": False, "load": None, "entry": None,
+                      "type": 0, "serlen": 0})
 
     progs, blocks = [], []
-    print(f"{'Page.Key':<10}{'File':<14}{'Bytes':>6}  {'SD offset':<10}{'RAM':<12}{'Entry':<7}{'Mode':<5} Menu name")
+    print(f"{'Page.Key':<10}{'File':<14}{'Bytes':>6}  {'SD offset':<10}{'RAM':<12}{'Entry':<7}{'Mode':<5}{'Type':<5} Menu name")
     for n in range(1, num + 1):
         it = items[n - 1]
         key = f"{(n - 1) // PER_PAGE + 1}.{(n - 1) % PER_PAGE + 1}"   # page.key in the menu
@@ -197,7 +228,7 @@ def main():
         if path is None:
             if a.allow_missing:
                 progs.append({"name": it["name"], "run": run, "load": DEFAULT_LOAD, "len": 1, "entry": DEFAULT_LOAD,
-                              "data": b"\0", "path": "(missing)"})
+                              "type": 0, "serlen": 0, "data": b"\0", "path": "(missing)"})
                 blocks.append(bytes(BLOCK))
                 print(f"{key:<10}{'(missing)':<14}{'-':>6}  ${(n-1)*BLOCK:08X} -           -      {'RUN' if run else 'LOAD':<5} {it['name']}  [empty]")
                 continue
@@ -224,11 +255,12 @@ def main():
             entry = 0x1000 if load <= 0x1000 < load + size else load
         if not load <= entry < load + size:
             sys.exit(f"ERROR: {path}: entry ${entry:04X} outside the image ${load:04X}-${load+size-1:04X}")
-        p = {"name": it["name"], "run": run, "load": load, "len": size, "entry": entry, "data": data, "path": path}
+        p = {"name": it["name"], "run": run, "load": load, "len": size, "entry": entry, "type": it["type"],
+             "serlen": it["serlen"], "data": data, "path": path}
         progs.append(p)
         blocks.append(build_block(n, p))
         print(f"{key:<10}{os.path.basename(path):<14}{size:>6}  ${(n-1)*BLOCK:08X} ${load:04X}-${load+size-1:04X} ${entry:04X}  "
-              f"{'RUN' if run else 'LOAD':<5} {it['name']}")
+              f"{'RUN' if run else 'LOAD':<5}{TYPE_NAMES.get(it['type'], '-'):<5} {it['name']}")
 
     # directory pages: page P in the first sector of block P (reserved area: never loaded into RAM)
     pages = (num + PER_PAGE - 1) // PER_PAGE

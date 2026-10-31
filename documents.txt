@@ -1,0 +1,7 @@
+# Documents written into the SD by "update_sd.py --mode full", in the document area of the MiniVIC Apps.
+# file in documents/ = TYPE NAME   (slot 1, 2, ... in file order, at most 15)
+# TYPE: TEXT (WRITE, ASM sources), SHEET (CALC), CARDS (FILE), MEMORY (MON). NAME: at most 12 characters.
+letter.dat = TEXT LETTER
+budget.dat = SHEET BUDGET
+friends.dat = CARDS FRIENDS
+hello.dat = TEXT HELLO

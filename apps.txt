@@ -1,0 +1,10 @@
+# Applications taken from "MiniVIC Apps/bin": file = [TYPE] menu name (without " - APP",
+# added by update_sd.py). TYPE is APP (default, can be left out) or TOOL.
+asm.bin = [TOOL] Asm
+calc.bin = Calc
+desk.bin = Desk
+disk.bin = [TOOL] Disk
+file.bin = File
+mon.bin = [TOOL] Mon
+term.bin = Term
+write.bin = Write
