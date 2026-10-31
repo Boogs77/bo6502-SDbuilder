@@ -24,3 +24,4 @@ times_tables.bin = Times Tables
 robert.bin = Robert
 cloud_raider.bin = Cloud Raider
 crystal_gardens.bin = Crystal Gardens
+special_forces.bin = Special Forces
