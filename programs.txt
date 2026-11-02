@@ -6,6 +6,7 @@
 !Cloud Raider - GAME@0FD0;
 !Core Runner - GAME@0FD0;
 !Crystal Gardens - GAME@0FD0;
+!Deep Space Miner - GAME@0FD0;
 !Defender - GAME@0FD0;
 !Exerion - GAME@0FD0;
 !Gravitar - GAME@0FD0;
