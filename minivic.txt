@@ -26,3 +26,4 @@ cloud_raider.bin = Cloud Raider
 crystal_gardens.bin = Crystal Gardens
 special_forces.bin = Special Forces
 core_runner.bin = Core Runner
+deep_space_miner.bin = Deep Space Miner
