@@ -8,7 +8,8 @@ Layout (RAW, no filesystem; standard capacity SD <= 2GB, byte addressing):
       +0..3   "BOGS"   +4 version (3)   +5 number of programs ON THIS PAGE (1..9)
       +6..14  flags of entries 0..8 (bit0 = RUN)   +15 TOTAL number of programs
       +16+i*8 parameters of entry i: load address (lo,hi), length (lo,hi), entry (lo,hi), type, serial name length
-              type: 0 unknown, 1 GAME, 2 APP, 3 TOOL. When a program is run, the BIOS KEYB/SD sends
+              type: 0 unknown, 1 GAME, 2 APP, 3 TOOL, 4 SOUND. The BIOS KEYB/SD uses it for the GAMES, APPS
+              (APP and TOOL) and SOUNDS submenus, and when a program is run it sends
               "[TYPE] Name" on the serial line, using only the first <serial name length> characters of the
               name (0 = whole name): the " - GAME" suffix shown in the menu is left out. The standard BIOS
               ignores both bytes (they used to be 0).
@@ -27,8 +28,9 @@ Names: text file (default programs.txt in the programs folder, or -l FILE), name
 (also over several lines). The first name is program 1, the second program 2, ...
     [!][[TYPE]]Name[@LOAD[:ENTRY]]
   !      program RUN right after loading ("N>" in the menu); without '!' it is only loaded ("N.")
-  [TYPE] GAME, APP or TOOL (see the directory above). Without it, the type comes from a " - GAME",
-         " - APP" or " - TOOL" suffix of the name; otherwise it is 0 (no serial line)
+  [TYPE] GAME, APP, TOOL or SOUND (see the directory above). Without it, the type comes from a " - GAME",
+         " - APP", " - TOOL", " - SOUND" or " - SONG" suffix of the name; otherwise it is 0 (no serial
+         line, shown only in the ALL list of the BIOS KEYB/SD)
   @LOAD  RAM load address in hex (default 1000; not needed for .txt/.hex dumps)
   :ENTRY start address (default: 1000 if it falls inside the loaded image, otherwise LOAD)
 Example programs.txt:   Banner; !Arcade Tank - GAME@0FD0; ![TOOL]Test RAM@1000
@@ -59,8 +61,9 @@ DIR_NAMES  = 96              # names: 32 bytes per program
 DIR_ESIZE  = 32              # 31 characters + $00
 NAME_MAX   = DIR_ESIZE - 1
 DEFAULT_LOAD = 0x1000
-TYPES      = {"GAME": 1, "APP": 2, "TOOL": 3}   # directory byte +6 of the entry parameters
+TYPES      = {"GAME": 1, "APP": 2, "TOOL": 3, "SOUND": 4}   # directory byte +6 of the entry parameters
 TYPE_NAMES = {v: k for k, v in TYPES.items()}
+SUFFIXES   = dict(TYPES, SONG=4)   # name suffixes that give the type (" - SONG" is a SOUND)
 
 def parse_hex(s, what):
     try:
@@ -109,11 +112,11 @@ def read_names(path, keep_case):
     return items
 
 def serial_name(name, ptype):
-    """(type, serial name length): a " - GAME"/" - APP"/" - TOOL" suffix gives the type when it is not
+    """(type, serial name length): a " - GAME"/" - APP"/" - TOOL"/" - SOUND"/" - SONG" suffix gives the type when it is not
     given, and is left out of the serial line when it matches the type."""
     m = re.search(r"\s+-\s+([A-Za-z]+)$", name)
-    if m and m.group(1).upper() in TYPES:
-        t = TYPES[m.group(1).upper()]
+    if m and m.group(1).upper() in SUFFIXES:
+        t = SUFFIXES[m.group(1).upper()]
         if ptype is None:
             ptype = t
         if ptype == t:

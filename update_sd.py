@@ -14,7 +14,8 @@ Two modes:
 Menu order: first the games in alphabetical order (" - GAME", loaded at $0FD0), then (full mode) the applications
 in alphabetical order (" - APP" or " - TOOL", loaded at $0FD0), then the songs in the order of songs.txt
 (" - SONG", loaded at $1000). The suffix also gives the type that make_sd.py writes in the directory: the
-BIOS KEYB/SD sends "[GAME] Name", "[APP] Name" or "[TOOL] Name" on the serial line when the program starts.
+BIOS KEYB/SD sends "[GAME] Name", "[APP] Name", "[TOOL] Name" or "[SOUND] Name" (" - SONG") on the serial line when
+the program starts, and shows each type in its submenu (GAMES, APPS, SOUNDS).
 
   minivic.txt    file.bin = Name          known games; new .bin files are appended with a name derived from
                                           the file (e.g. lunar_lander.bin -> "Lunar Lander")

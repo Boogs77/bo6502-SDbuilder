@@ -49,7 +49,7 @@ python3 update_sd.py --mode full             # full/program1..N.bin, full/progra
 | `games` (default) | games, songs | `sd.img`, copied to the emulator | any |
 | `full` | games, applications of [miniVIC Apps](https://github.com/Boogs77/miniVIC_apps), songs, sample documents | `sd_full.img`, not copied | KEYB/SD |
 
-The menu lists the games, then the applications (` - APP` or ` - TOOL`), then the songs. New applications found
+The menu lists the games, then the applications (` - APP` or ` - TOOL`), then the songs (` - SONG`, type SOUND). New applications found
 in `../MiniVIC Apps/bin` are appended to `apps.txt`: fix the name there and mark the tools with `[TOOL]`.
 `sd_full.img` is 16 MB: after the 255 program blocks (8 MB) comes the document area that the applications read and
 write, where the script puts the documents listed in `documents.txt`:
@@ -97,7 +97,7 @@ Each program can be:
 ```
 
 - `!`: the program runs right after loading (shown as `N>` in the menu; without `!` it is shown as `N.` and only loaded);
-- `[TYPE]`: `GAME`, `APP` or `TOOL`; without it the type comes from a ` - GAME`, ` - APP` or ` - TOOL` suffix of the name;
+- `[TYPE]`: `GAME`, `APP`, `TOOL` or `SOUND`; without it the type comes from a ` - GAME`, ` - APP`, ` - TOOL`, ` - SOUND` or ` - SONG` suffix of the name;
 - `@LOAD`: RAM load address in hex (default `1000`);
 - `:ENTRY`: start address (default `1000` if it falls inside the image, otherwise `LOAD`).
 
@@ -137,7 +137,8 @@ the rest of the memory untouched.
 | `16 + i*8` | 8 | load (lo,hi), length (lo,hi), entry (lo,hi), type, serial name length |
 | `96 + i*32` | 32 | ASCII name (at most 31 characters + `$00`) |
 
-Type: 0 none, 1 GAME, 2 APP, 3 TOOL. When a program starts, the BIOS KEYB/SD sends `[TYPE] Name` on the serial
+Type: 0 none, 1 GAME, 2 APP, 3 TOOL, 4 SOUND. The BIOS KEYB/SD (from 03-11-2026) shows them in the GAMES, APPS (APP and TOOL)
+and SOUNDS submenus; type 0 only appears in ALL. When a program starts, the BIOS KEYB/SD sends `[TYPE] Name` on the serial
 line, using only the first *serial name length* characters of the name (0 = the whole name), so the ` - GAME`
 suffix of the menu is left out. Older BIOS versions ignore both bytes.
 
