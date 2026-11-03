@@ -10,6 +10,7 @@ and loads into RAM.
 |---|---|
 | `make_sd.py` | Builds the `sd.img` image or writes directly to the card |
 | `update_sd.py` | Builds the SD in one of two modes: `--mode games` (default) takes the games from `../MiniVIC Games/bin` and the songs from `songs/`, runs `make_sd.py` and copies `sd.img` and the songs to `../bo6502-emulator/public/` (the emulator's default SD); `--mode full` also adds the applications of `../MiniVIC Apps/bin` and the sample documents, and writes `sd_full.img`. `--dry-run` only shows what changes |
+| `saves.py` | Save area of the card (game records, saved games, from 16 MB): `export` to Markdown, CSV or JSON, `import` of a JSON export, `clear` (see below) |
 | `minivic.txt` / `apps.txt` / `songs.txt` | Menu name of each MiniVIC game, application and song (`file.bin = Name`; `file.bin = [TOOL] Name` for a tool) |
 | `documents.txt` / `documents/` | Sample documents of the full SD (`file = TYPE NAME`) |
 | `programs.txt` | List of menu names of `sd.img` (one per program, separated by `;`); the full SD keeps its own in `full/` |
@@ -67,6 +68,30 @@ The applications need the BIOS KEYB/SD, which adds sector read/write to the jump
 BIOS with "Load ROM .bin" and `sd_full.img` with "Insert .img image". For a real card, write the whole
 `sd_full.img` with a raw image writer (`dd`, Win32 Disk Imager) so that the documents are on it too:
 `update_sd.py --mode full -- -o <device>` writes the programs only.
+
+## Save area: game records
+
+The miniVIC games keep their records (and saved games) on the card from **16 MB** (sector `32768`, byte `$01000000`),
+right after the end of `sd_full.img`: writing an image with `dd` / Win32 Disk Imager, or the programs with
+`make_sd.py -o`, never erases them. The games write there through the BIOS KEYB/SD (`$FD18` / `$FD1B`).
+
+| Sectors | Contents |
+|---|---|
+| `32768 + z*16` ... `+15` | zone `z` (0-255): one per game (1-127) or application (128-255), fixed numbers |
+| zone sectors 0 and 1 | records, two copies written in turn: `"MVSV"`, version 1, zone, type 1, tables, rows, row size 8, write counter, game name (16 chars) at `+16`, rows at `+32` (BCD score low byte first, 3 initials, extra byte), 16-bit sum at `+510` |
+| zone sectors 2-15 | free for the game (saved games) |
+
+```sh
+python3 saves.py export sd_card.img                      # records as Markdown on the screen
+python3 saves.py export '\\.\PhysicalDrive2' -o records.csv   # from the card (Administrator prompt)
+python3 saves.py export sd_card.img -o saves.json        # the whole area, to keep or import elsewhere
+python3 saves.py import saves.json sd_full.img           # into an image (extended to 18 MB) or onto a card
+python3 saves.py clear sd_full.img --zone 28             # one zone, or the whole area without --zone
+```
+
+The `.json` file is the same as **Export records** / **Import records** of the
+[web emulator](https://github.com/Boogs77/BO6502-miniVIC-emulator), which keeps the area in the browser.
+Writing to a card asks to type the device name, unless `--yes` is given.
 
 ## Usage of make_sd.py
 
