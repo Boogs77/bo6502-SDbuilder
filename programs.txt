@@ -8,6 +8,7 @@
 !Crystal Gardens - GAME@0FD0;
 !Deep Space Miner - GAME@0FD0;
 !Defender - GAME@0FD0;
+!Dune Ranger - GAME@0FD0;
 !Exerion - GAME@0FD0;
 !Gravitar - GAME@0FD0;
 !Joust - GAME@0FD0;
