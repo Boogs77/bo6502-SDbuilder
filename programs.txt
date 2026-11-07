@@ -19,6 +19,7 @@
 !Quantum - GAME@0FD0;
 !Radar Scope - GAME@0FD0;
 !Robert - GAME@0FD0;
+!Room - GAME@0FD0;
 !Sky Squirrel - GAME@0FD0;
 !Sky Tug - GAME@0FD0;
 !Space Firebird - GAME@0FD0;
