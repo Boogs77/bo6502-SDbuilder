@@ -29,6 +29,7 @@
 !The Warriors - GAME@0FD0;
 !Times Tables - GAME@0FD0;
 !Warlords - GAME@0FD0;
+!Wormer - GAME@0FD0;
 !Imperial March - SONG;
 !The Final Countdown - SONG;
 !Super Mario Bros - SONG;
