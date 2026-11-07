@@ -30,5 +30,5 @@ deep_space_miner.bin = Deep Space Miner
 dune_ranger.bin = Dune Ranger
 sky_tug.bin = Sky Tug
 super_carlo.bin = Super Carlo
-ghost_ghust.bin = Ghost Ghust
+ghost_ghust.bin = Ghost & Ghust
 wormer.bin = Wormer
