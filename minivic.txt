@@ -33,3 +33,4 @@ super_carlo.bin = Super Carlo
 ghost_ghust.bin = Ghost & Ghust
 wormer.bin = Wormer
 sky_squirrel.bin = Sky Squirrel
+room.bin = Room
