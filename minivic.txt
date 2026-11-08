@@ -40,3 +40,4 @@ zork2_kb.bin = Zork II Keyboard
 zork2_joy.bin = Zork II Joystick
 zork3_kb.bin = Zork III Keyboard
 zork3_joy.bin = Zork III Joystick
+robo_vac.bin = Robo Vac
