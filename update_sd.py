@@ -23,12 +23,19 @@ the program starts, and shows each type in its submenu (GAMES, APPS, SOUNDS).
   songs.txt      file.bin = Name          songs in songs/
   documents.txt  file = TYPE NAME         documents in documents/ (full mode); TYPE is TEXT, SHEET, CARDS or
                                           MEMORY, NAME at most 12 characters; slot 1, 2, ... in file order
+  stories.txt    file = SLOT prog.bin ... Z-machine stories in stories/ (full mode) and the programs that read
+                                          them: those programs are only in the full SD
   In minivic.txt and apps.txt the name can start with [GAME], [APP] or [TOOL] to change the type.
 
 Document area (the format of the MiniVIC Apps, lib/docs.asm): sector 16384 ($00800000, after the 255 program
 blocks) is the index: +0 "DOCS", +4 version 1, +5 slots (15); entry k (1-15) at k*32: +0 type (1 text, 2 sheet,
 3 card file, 4 memory), +1/+2 length, +4..+15 name ($00 padded). Document k is 40 sectors (20 KB) from sector
 16384 + k*40.
+
+Story area (the miniVIC Z-Machine of the MiniVIC Games): sector 20480 ($00A00000) is the index: +0 "ZSTO",
++4 version 1, +5 slots (3); entry k (1-3) at k*16: +0/+1 sectors, +2/+3 release, +4..+9 serial (ASCII),
++10/+11 checksum, +12/+13 length / 2 (all little endian). Story k is at most 256 sectors (128 KB) from sector
+20480 + 1 + (k-1)*256.
 
 Before overwriting, the old files of the mode (programN.bin, programs.txt and the image) are copied to
 .backup/YYYYMMDD-HHMMSS/ (.backup/YYYYMMDD-HHMMSS-full/ in full mode).
@@ -54,6 +61,9 @@ DOC_SLOTS  = 15
 DOC_SECTS  = 40              # sectors per document (20 KB)
 DOC_NAMELEN = 12
 DOC_TYPES  = {"TEXT": 1, "SHEET": 2, "CARDS": 3, "MEMORY": 4}
+STORY_BASE = 20480           # sector of the story index
+STORY_SLOTS = 3
+STORY_SECTS = 256            # sectors per story (128 KB)
 
 def read_map(path, default_type=None):
     """Lines 'file.bin = [TYPE] Name' -> list of (file, name, type) in file order."""
@@ -121,6 +131,51 @@ def write_documents(img_path, docs):
         img[p:p + len(data)] = data
     open(img_path, "wb").write(img)
 
+def read_stories(path):
+    """stories.txt -> list of (file, slot, [programs]); checks the files (Z-machine version 3, checksum)."""
+    items = []
+    if not os.path.isfile(path):
+        return items
+    for n, line in enumerate(open(path, encoding="utf-8-sig"), 1):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        f, _, rest = (s.strip() for s in line.partition("="))
+        words = rest.split()
+        if not f or not words or not words[0].isdigit() or not 1 <= int(words[0]) <= STORY_SLOTS:
+            sys.exit(f"ERROR: stories.txt line {n}: use 'file = slot (1-{STORY_SLOTS}) program.bin ...'")
+        p = os.path.join(HERE, "stories", f)
+        if not os.path.isfile(p):
+            sys.exit(f"ERROR: story not found: stories/{f}")
+        b = open(p, "rb").read()
+        if b[0] != 3 or len(b) > STORY_SECTS * 512:
+            sys.exit(f"ERROR: stories/{f}: not a version 3 story of at most {STORY_SECTS * 512} bytes")
+        ln = ((b[0x1A] << 8) | b[0x1B]) * 2
+        if sum(b[0x40:ln]) & 0xFFFF != (b[0x1C] << 8) | b[0x1D]:
+            sys.exit(f"ERROR: stories/{f}: wrong checksum")
+        items.append((f, int(words[0]), words[1:]))
+    if len({s for _, s, _ in items}) != len(items):
+        sys.exit("ERROR: stories.txt: two stories in the same slot")
+    return items
+
+def write_stories(img_path, stories):
+    """Writes the story index and the stories into the (16 MB) image."""
+    img = bytearray(open(img_path, "rb").read())
+    ix = STORY_BASE * 512
+    img[ix:ix + 512] = bytes(512)
+    img[ix:ix + 6] = b"ZSTO" + bytes([1, STORY_SLOTS])
+    for f, k, _ in stories:
+        b = open(os.path.join(HERE, "stories", f), "rb").read()
+        e = ix + 16 * k
+        img[e:e + 2] = ((len(b) + 511) // 512).to_bytes(2, "little")
+        img[e + 2:e + 4] = b[2:4][::-1]                          # release
+        img[e + 4:e + 10] = b[0x12:0x18]                         # serial
+        img[e + 10:e + 12] = b[0x1C:0x1E][::-1]                  # checksum
+        img[e + 12:e + 14] = b[0x1A:0x1C][::-1]                  # length / 2
+        p = (STORY_BASE + 1 + (k - 1) * STORY_SECTS) * 512
+        img[p:p + STORY_SECTS * 512] = b + bytes(STORY_SECTS * 512 - len(b))
+    open(img_path, "wb").write(img)
+
 def name_from_file(f):
     return " ".join(w.capitalize() for w in os.path.splitext(f)[0].replace("-", "_").split("_") if w)
 
@@ -177,6 +232,9 @@ def main():
 
     map_path = os.path.join(HERE, "minivic.txt")
     games, added, missing = collect(a.minivic, map_path, "GAME")
+    stories = read_stories(os.path.join(HERE, "stories.txt"))
+    full_only = [g for g in games if not full and any(g[0] in progs for _, _, progs in stories)]
+    games = [g for g in games if g not in full_only]
     apps_map = os.path.join(HERE, "apps.txt")
     apps, apps_added, apps_missing = [], [], []
     if full:
@@ -201,7 +259,7 @@ def main():
     cur = current_sd(out)
     print(f"Mode {a.mode} -> {os.path.basename(img)}   games from {os.path.normpath(a.minivic)}: {len(games)}   "
           + (f"applications from {os.path.normpath(a.apps)}: {len(apps)}   " if full else "")
-          + f"songs: {len(songs)}" + (f"   documents: {len(docs)}" if full else "") + "\n")
+          + f"songs: {len(songs)}" + (f"   documents: {len(docs)}   stories: {len(stories)}" if full else "") + "\n")
     changes = 0
     for n, (label, _, data) in enumerate(sd, 1):
         old = cur.pop(label.upper(), None)
@@ -214,6 +272,10 @@ def main():
     for k, (f, t, name) in enumerate(docs, 1):
         print(f"doc {k:>2}  {name:<12} {next(x for x, v in DOC_TYPES.items() if v == t):<7}"
               f"{os.path.getsize(os.path.join(HERE, 'documents', f)):>6} bytes  documents/{f}")
+    for f, k, _ in stories if full else []:
+        print(f"story {k}  {os.path.getsize(os.path.join(HERE, 'stories', f)):>6} bytes  stories/{f}")
+    for f, nm, _ in full_only:
+        print(f"{nm} ({f}) reads a story: only in the full SD")
     for f in missing:
         print(f"WARNING: {f} is in minivic.txt but not in {a.minivic}: left out")
     for f in apps_missing:
@@ -266,6 +328,8 @@ def main():
     if full:
         if to_img:
             write_documents(img, docs)
+            write_stories(img, stories)
+            print(f"{len(stories)} stories written from sector {STORY_BASE}")
             print(f"{len(docs)} documents written, {os.path.basename(img)} extended to {FULL_SIZE // 1024 // 1024} MB "
                   f"(use it with the BIOS KEYB/SD)")
         else:

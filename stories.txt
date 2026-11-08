@@ -1,0 +1,6 @@
+# Z-machine stories written into the SD by "update_sd.py --mode full", in the story area of the miniVIC Z-Machine.
+# file in stories/ = slot program.bin ...   (the programs that read the story: only in the full SD)
+# Zork I-III: Infocom, MIT License (c) 2025 Microsoft (stories/zorkN.LICENSE, https://github.com/historicalsource)
+zork1.z3 = 1 zork1_kb.bin zork1_joy.bin
+zork2.z3 = 2 zork2_kb.bin zork2_joy.bin
+zork3.z3 = 3 zork3_kb.bin zork3_joy.bin
