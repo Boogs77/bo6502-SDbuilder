@@ -42,3 +42,4 @@ zork3_kb.bin = Zork III Keyboard
 zork3_joy.bin = Zork III Joystick
 robo_vac.bin = Robo Vac
 little_6502_guy.bin = Little 6502 Guy
+hedge_hop.bin = Hedge Hop
