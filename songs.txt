@@ -1,4 +1,4 @@
 # Songs in songs/, in the order they appear in the menu after the games: file = name (without " - SONG").
 imperial_march.bin = Imperial March
-the_final_countdown.bin = The Final Countdown
+the_final_countdown.bin = Final Countdown Song
 super_mario_bros.bin = Super Mario Bros

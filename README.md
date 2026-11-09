@@ -50,7 +50,7 @@ python3 update_sd.py --mode full             # full/program1..N.bin, full/progra
 | `games` (default) | games, songs | `sd.img`, copied to the emulator | any |
 | `full` | games, applications of [miniVIC Apps](https://github.com/Boogs77/miniVIC_apps), songs, sample documents | `sd_full.img`, not copied | KEYB/SD |
 
-The menu lists the games, then the applications (` - APP` or ` - TOOL`), then the songs (` - SONG`, type SOUND). New applications found
+The menu lists the games, then the applications (` - APP` or ` - TOOL`), then the songs; games and songs show their plain name (type GAME / SOUND from a `[TYPE]` prefix in `programs.txt`). New applications found
 in `../MiniVIC Apps/bin` are appended to `apps.txt`: fix the name there and mark the tools with `[TOOL]`.
 `sd_full.img` is 16 MB: after the 255 program blocks (8 MB) comes the document area that the applications read and
 write, where the script puts the documents listed in `documents.txt`:

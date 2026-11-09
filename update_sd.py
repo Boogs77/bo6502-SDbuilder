@@ -11,11 +11,12 @@ Two modes:
                 full/programs.txt and sd_full.img (16 MB) in this folder; nothing is copied to the emulator.
                 The applications need the BIOS KEYB/SD (sector read/write, "[TYPE] Name" serial line).
 
-Menu order: first the games in alphabetical order (" - GAME", loaded at $0FD0), then (full mode) the applications
+Menu order: first the games in alphabetical order (plain name, loaded at $0FD0), then (full mode) the applications
 in alphabetical order (" - APP" or " - TOOL", loaded at $0FD0), then the songs in the order of songs.txt
-(" - SONG", loaded at $1000). The suffix also gives the type that make_sd.py writes in the directory: the
-BIOS KEYB/SD sends "[GAME] Name", "[APP] Name", "[TOOL] Name" or "[SOUND] Name" (" - SONG") on the serial line when
-the program starts, and shows each type in its submenu (GAMES, APPS, SOUNDS).
+(plain name, loaded at $1000). Games and songs get their type from a [GAME] / [SOUND] prefix in programs.txt, the
+applications from the " - APP" / " - TOOL" suffix that stays in the menu: make_sd.py writes the type in the directory,
+the BIOS KEYB/SD sends "[GAME] Name", "[APP] Name", "[TOOL] Name" or "[SOUND] Name" on the serial line when the
+program starts, and shows each type in its submenu (GAMES, APPS, SOUNDS).
 
   minivic.txt    file.bin = Name          known games; new .bin files are appended with a name derived from
                                           the file (e.g. lunar_lander.bin -> "Lunar Lander")
@@ -249,12 +250,16 @@ def main():
         sys.exit(f"ERROR: {total} programs, at most {MAX_PROGS}")
 
     # new SD: (menu name, programs.txt entry, data)
-    sd = [(f"{nm} - {t}", f"!{nm} - {t}@{GAME_LOAD}", open(os.path.join(a.minivic, f), "rb").read())
-          for f, nm, t in games]
-    sd += [(f"{nm} - {t}", f"!{nm} - {t}@{GAME_LOAD}", open(os.path.join(a.apps, f), "rb").read())
-           for f, nm, t in apps]
-    sd += [(f"{nm} - SONG", f"!{nm} - SONG", open(os.path.join(HERE, "songs", f), "rb").read())
-           for f, nm, _ in songs]
+    # the menu shows " - APP" / " - TOOL" only: games and songs take their type from a [TYPE] prefix
+    def entry(nm, t, load):
+        if t in ("APP", "TOOL"):
+            name, spec = f"{nm} - {t}", f"!{nm} - {t}"
+        else:
+            name, spec = nm, f"![{t}]{nm}"
+        return name, spec + (f"@{load}" if load else "")
+    sd = [(*entry(nm, t, GAME_LOAD), open(os.path.join(a.minivic, f), "rb").read()) for f, nm, t in games]
+    sd += [(*entry(nm, t, GAME_LOAD), open(os.path.join(a.apps, f), "rb").read()) for f, nm, t in apps]
+    sd += [(*entry(nm, "SOUND", None), open(os.path.join(HERE, "songs", f), "rb").read()) for f, nm, _ in songs]
 
     cur = current_sd(out)
     print(f"Mode {a.mode} -> {os.path.basename(img)}   games from {os.path.normpath(a.minivic)}: {len(games)}   "
