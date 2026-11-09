@@ -17,6 +17,7 @@
 ![GAME]Little 6502 Guy@0FD0;
 ![GAME]Lunar Lander@0FD0;
 ![GAME]Missile Command@0FD0;
+![GAME]Mole Hole@0FD0;
 ![GAME]Moon Cresta@0FD0;
 ![GAME]Quantum@0FD0;
 ![GAME]Radar Scope@0FD0;
