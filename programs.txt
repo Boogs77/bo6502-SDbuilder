@@ -13,6 +13,7 @@
 !Ghost & Ghust - GAME@0FD0;
 !Gravitar - GAME@0FD0;
 !Joust - GAME@0FD0;
+!Little 6502 Guy - GAME@0FD0;
 !Lunar Lander - GAME@0FD0;
 !Missile Command - GAME@0FD0;
 !Moon Cresta - GAME@0FD0;
