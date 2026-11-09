@@ -12,6 +12,7 @@
 !Exerion - GAME@0FD0;
 !Ghost & Ghust - GAME@0FD0;
 !Gravitar - GAME@0FD0;
+!Hedge Hop - GAME@0FD0;
 !Joust - GAME@0FD0;
 !Little 6502 Guy - GAME@0FD0;
 !Lunar Lander - GAME@0FD0;
