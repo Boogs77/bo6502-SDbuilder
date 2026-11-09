@@ -20,6 +20,7 @@
 ![GAME]Missile Command@0FD0;
 ![GAME]Mole Hole@0FD0;
 ![GAME]Moon Cresta@0FD0;
+![GAME]Paint Duel@0FD0;
 ![GAME]Quantum@0FD0;
 ![GAME]Radar Scope@0FD0;
 ![GAME]Robert@0FD0;
