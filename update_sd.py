@@ -192,7 +192,7 @@ def current_sd(folder):
     raw = open(path, encoding="utf-8-sig").read().replace("\r", "\n").replace("\n", ";")
     names = [p.strip() for p in raw.split(";") if p.strip()]
     for n, p in enumerate(names, 1):
-        p = re.sub(r"@.*$", "", p.lstrip("!")).strip()
+        p = re.sub(r"^\[[A-Za-z]+\]", "", re.sub(r"@.*$", "", p.lstrip("!")).strip()).strip()   # no [TYPE] prefix
         b = os.path.join(folder, f"program{n}.bin")
         if os.path.isfile(b):
             cur[p.upper()] = digest(open(b, "rb").read())
