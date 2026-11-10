@@ -16,6 +16,7 @@
 ![GAME]Joust@0FD0;
 ![GAME]Lighthouse Keeper@0FD0;
 ![GAME]Little 6502 Guy@0FD0;
+![GAME]Lix@0FD0;
 ![GAME]Lunar Lander@0FD0;
 ![GAME]Missile Command@0FD0;
 ![GAME]Mole Hole@0FD0;
