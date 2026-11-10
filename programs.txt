@@ -3,6 +3,7 @@
 ![GAME]Breakout@0FD0;
 ![GAME]Bubbles@0FD0;
 ![GAME]Centipede@0FD0;
+![GAME]Cheese Chase@0FD0;
 ![GAME]Cloud Raider@0FD0;
 ![GAME]Core Runner@0FD0;
 ![GAME]Crystal Gardens@0FD0;
