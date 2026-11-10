@@ -46,3 +46,4 @@ hedge_hop.bin = Hedge Hop
 mole_hole.bin = Mole Hole
 lighthouse_keeper.bin = Lighthouse Keeper
 paint_duel.bin = Paint Duel
+lix.bin = Lix
