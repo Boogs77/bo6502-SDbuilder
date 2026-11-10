@@ -47,3 +47,4 @@ mole_hole.bin = Mole Hole
 lighthouse_keeper.bin = Lighthouse Keeper
 paint_duel.bin = Paint Duel
 lix.bin = Lix
+cheese_chase.bin = Cheese Chase
