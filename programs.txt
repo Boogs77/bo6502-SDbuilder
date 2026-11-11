@@ -13,6 +13,7 @@
 ![GAME]Exerion@0FD0;
 ![GAME]Ghost & Ghust@0FD0;
 ![GAME]Gravitar@0FD0;
+![GAME]Haunted Keep@0FD0;
 ![GAME]Hedge Hop@0FD0;
 ![GAME]Joust@0FD0;
 ![GAME]Lighthouse Keeper@0FD0;
