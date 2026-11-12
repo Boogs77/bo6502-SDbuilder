@@ -5,6 +5,7 @@ calc.bin = Calc
 desk.bin = Desk
 disk.bin = [TOOL] Disk
 file.bin = File
+jukebox.bin = Jukebox
 mon.bin = [TOOL] Mon
 term.bin = Term
 write.bin = Write

@@ -45,7 +45,6 @@
 ![SOUND]Imperial March;
 ![SOUND]Final Countdown Song;
 ![SOUND]Super Mario Bros;
-![SOUND]MiniVIC Jukebox;
 ![SOUND]Mountain King;
 ![SOUND]Korobeiniki;
 ![SOUND]The Entertainer;
@@ -54,3 +53,11 @@
 ![SOUND]Star Patrol;
 ![SOUND]Neon Drive;
 ![SOUND]Jingles;
+![SOUND]Flight of the Bumblebee;
+![SOUND]Rondo alla Turca;
+![SOUND]Can-Can;
+![SOUND]William Tell Overture;
+![SOUND]Fur Elise;
+![SOUND]Maze Chase;
+![SOUND]Dungeon Boss;
+![SOUND]High Score;
