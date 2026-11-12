@@ -12,7 +12,7 @@ Two modes:
                 The applications need the BIOS KEYB/SD (sector read/write, "[TYPE] Name" serial line).
 
 Menu order: first the games in alphabetical order (plain name, loaded at $0FD0), then (full mode) the applications
-in alphabetical order (" - APP" or " - TOOL", loaded at $0FD0), then the songs in the order of songs.txt
+in alphabetical order (" - APP" or " - TOOL", names padded so the dashes line up, loaded at $0FD0), then the songs in the order of songs.txt
 (plain name, loaded at $1000). Games and songs get their type from a [GAME] / [SOUND] prefix in programs.txt, the
 applications from the " - APP" / " - TOOL" suffix that stays in the menu: make_sd.py writes the type in the directory,
 the BIOS KEYB/SD sends "[GAME] Name", "[APP] Name", "[TOOL] Name" or "[SOUND] Name" on the serial line when the
@@ -251,9 +251,12 @@ def main():
 
     # new SD: (menu name, programs.txt entry, data)
     # the menu shows " - APP" / " - TOOL" only: games and songs take their type from a [TYPE] prefix
+    # the application names are padded with spaces, so that the dash starts in the same column for all of them
+    width = max((len(nm) for _, nm, _ in apps), default=0)
     def entry(nm, t, load):
         if t in ("APP", "TOOL"):
-            name, spec = f"{nm} - {t}", f"!{nm} - {t}"
+            name = f"{nm:<{width}} - {t}"
+            spec = "!" + name
         else:
             name, spec = nm, f"![{t}]{nm}"
         return name, spec + (f"@{load}" if load else "")
