@@ -2,3 +2,13 @@
 imperial_march.bin = Imperial March
 the_final_countdown.bin = Final Countdown Song
 super_mario_bros.bin = Super Mario Bros
+# MiniVIC Sound (../MiniVIC Sound/bin, built by build.js there): the jukebox, then the songs
+minivic_jukebox.bin = MiniVIC Jukebox
+mountain_king.bin = Mountain King
+korobeiniki.bin = Korobeiniki
+entertainer.bin = The Entertainer
+toccata.bin = Toccata in D Minor
+arcade_start.bin = Arcade Start
+star_patrol.bin = Star Patrol
+neon_drive.bin = Neon Drive
+jingles.bin = Jingles

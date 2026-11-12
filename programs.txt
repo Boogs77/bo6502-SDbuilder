@@ -45,3 +45,12 @@
 ![SOUND]Imperial March;
 ![SOUND]Final Countdown Song;
 ![SOUND]Super Mario Bros;
+![SOUND]MiniVIC Jukebox;
+![SOUND]Mountain King;
+![SOUND]Korobeiniki;
+![SOUND]The Entertainer;
+![SOUND]Toccata in D Minor;
+![SOUND]Arcade Start;
+![SOUND]Star Patrol;
+![SOUND]Neon Drive;
+![SOUND]Jingles;
