@@ -18,7 +18,7 @@ and loads into RAM.
 | `ex.cfg` | ld65 configuration: code at `$1000`, at most `$7000` bytes |
 | `bios_jt.inc` | Fixed addresses of the BIOS jump table (`$FD00`–`$FD15`) |
 | `build.py` | Assembles `prog.s` into `program1..4.bin` (needs cc65) |
-| `songs/` | Backup copy of the songs (Imperial March, The Final Countdown, Super Mario Bros; the MiniVIC Sound songs, built in ../MiniVIC Sound; MiniVIC Jukebox, which plays them all, is an application: `jukebox.bin` of ../MiniVIC Apps/bin) |
+| `songs/` | Backup copy of the songs (Imperial March, The Final Countdown, Super Mario Bros; the songs of [miniVIC_music](https://github.com/Boogs77/miniVIC_music), built in ../MiniVIC Sound; MiniVIC Jukebox, which plays them all, is an application: `jukebox.bin` of ../MiniVIC Apps/bin) |
 
 The program binaries (`programN.bin`) and the `.img` images are not in the repository: put them in the folder
 before running the script, or generate them with `update_sd.py` or `build.py`. To use a song from `songs/` by
