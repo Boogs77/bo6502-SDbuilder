@@ -9,11 +9,12 @@ and loads into RAM.
 | File | Description |
 |---|---|
 | `make_sd.py` | Builds the `sd.img` image or writes directly to the card |
-| `update_sd.py` | Builds the SD in one of two modes: `--mode games` (default) takes the games from `../MiniVIC Games/bin` and the songs from `songs/`, runs `make_sd.py` and copies `sd.img` and the songs to `../bo6502-emulator/public/` (the emulator's default SD); `--mode full` also adds the applications of `../MiniVIC Apps/bin` and the sample documents, and writes `sd_full.img`. `--dry-run` only shows what changes |
+| `update_sd.py` | Builds the SD in one of three modes: `--mode games` (default) takes the games from `../MiniVIC Games/bin` and the songs from `songs/`, runs `make_sd.py` and copies `sd.img` and the songs to `../bo6502-emulator/public/` (the emulator's default SD); `--mode full` also adds the applications of `../MiniVIC Apps/bin` and the sample documents, and writes `sd_full.img`; `--mode arcade` builds the SD of the Arcade6502 cabinet, `sd_arcade.img`, from `arcade.json` of [Arcade Games](https://github.com/Boogs77/arcade_games). `--dry-run` only shows what changes |
+| `arcade.py` | Arcade catalog of the cabinet SD (list, game pages, 128x96 previews from the PNG pictures), used by `update_sd.py --mode arcade` |
 | `saves.py` | Save area of the card (game records, saved games, from 16 MB): `export` to Markdown, CSV or JSON, `import` of a JSON export, `clear` (see below) |
 | `minivic.txt` / `apps.txt` / `songs.txt` | Menu name of each MiniVIC game, application and song (`file.bin = Name`; `file.bin = [TOOL] Name` for a tool) |
 | `documents.txt` / `documents/` | Sample documents of the full SD (`file = TYPE NAME`) |
-| `programs.txt` | List of menu names of `sd.img` (one per program, separated by `;`); the full SD keeps its own in `full/` |
+| `programs.txt` | List of menu names of `sd.img` (one per program, separated by `;`); the full SD keeps its own in `full/`, the cabinet SD in `arcade/` |
 | `prog.s` | Example program in ca65 assembly (banner, RAM test with `PROGNUM=4`) |
 | `ex.cfg` | ld65 configuration: code at `$1000`, at most `$7000` bytes |
 | `bios_jt.inc` | Fixed addresses of the BIOS jump table (`$FD00`–`$FD15`) |
@@ -49,6 +50,7 @@ python3 update_sd.py --mode full             # full/program1..N.bin, full/progra
 |---|---|---|---|
 | `games` (default) | games, songs | `sd.img`, copied to the emulator | any |
 | `full` | games, applications of [miniVIC Apps](https://github.com/Boogs77/miniVIC_apps), songs, sample documents | `sd_full.img`, not copied | KEYB/SD |
+| `arcade` | the cabinet games of `arcade.json`, MiniVIC Jukebox, songs, arcade catalog | `sd_arcade.img`, not copied | Arcade BIOS |
 
 The menu lists the games, then the applications (` - APP` or ` - TOOL`, the names padded with spaces so that the dashes line up), then the songs; games and songs show their plain name (type GAME / SOUND from a `[TYPE]` prefix in `programs.txt`). New applications found
 in `../MiniVIC Apps/bin` are appended to `apps.txt`: fix the name there and mark the tools with `[TOOL]`.
@@ -68,6 +70,41 @@ The applications need the BIOS KEYB/SD, which adds sector read/write to the jump
 BIOS with "Load ROM .bin" and `sd_full.img` with "Insert .img image". For a real card, write the whole
 `sd_full.img` with a raw image writer (`dd`, Win32 Disk Imager) so that the documents are on it too:
 `update_sd.py --mode full -- -o <device>` writes the programs only.
+
+## Arcade SD: the Arcade6502 cabinet
+
+```sh
+python3 update_sd.py --mode arcade --dry-run   # check arcade.json and list the cabinet SD
+python3 update_sd.py --mode arcade             # arcade/program1..N.bin, arcade/programs.txt -> sd_arcade.img (16 MB)
+```
+
+The cabinet SD is read by the front-end of the [Arcade BIOS](https://github.com/Boogs77/arcade_bios). Its contents
+come from `arcade.json` of the Arcade Games repository (default `../Arcade Games/arcade.json`, option `--catalog`),
+which is checked first with `tools/check_catalog.py` of that repository: with errors nothing is written.
+
+- Programs: the games of `arcade.json` in alphabetical order (type GAME, loaded at `$0FD0`), then MiniVIC Jukebox
+  (` - APP`, loaded at `$0FD0`: the Arcade BIOS finds it by the name `JUKEBOX` when the card has no catalog),
+  then all the songs of `songs.txt` when `songs` is `"all"`. The binaries come from `bin.source`: `minivic` =
+  `--minivic`, `apps` = `--apps`, `arcade` = `--arcade` (default `bin/` next to `arcade.json`). No applications,
+  no keyboard versions, no documents.
+- Stories: the Z-machine stories of `stories.txt` that the cabinet games read (the joystick versions of Zork).
+- Catalog (version 1): list, text page and 128x96 preview of every entry, in alphabetical order with the music entry
+  last. The page lines come from `inspired`, `maker`, `players` and `description` (the rules of
+  `check_catalog.py`); the preview is the PNG of `preview` (512x384 or 256x192) reduced to the TMS9918A colours,
+  2 colours per 8-pixel row. `zone`, `controls` and `credits` are checked but not written yet (catalog version 2).
+
+| Sector | Contents |
+|---|---|
+| `0` ... | program blocks (64 sectors each), directory in the first sector of the first blocks |
+| `20480` (`$00A00000`) | Z-machine story index `"ZSTO"`, stories from `20481` (256 sectors each) |
+| `24576` (`$00C00000`) | catalog header: `"ARCD"`, version `1`, entries N (1-255); cabinet title at `+16` (31 characters + `$00`) |
+| `24577` ... | index, 32 bytes per entry: `+0` SD slot, `+1` kind (1 game, 2 music), `+2` flags (bit 0 preview, bit 1 text), `+8` name (23 characters + `$00`); `+3`-`+7` are 0 |
+| `24576 + 64 + i*8` | page of entry i: 16 text lines of 32 bytes (line 0 inspiring game, line 1 maker / players, then the description at 30 columns) |
+| `... + 1` to `+ 3` | preview patterns: 192 tiles (16 x 12, by rows) of 8 bytes |
+| `... + 4` to `+ 6` | preview colours: 192 x 8 bytes (foreground << 4 \| background) |
+| `32768` ... | save area, never written (see below) |
+
+In the emulator, load the Arcade BIOS with "Load ROM .bin" and `sd_arcade.img` with "Insert .img image".
 
 ## Save area: game records
 

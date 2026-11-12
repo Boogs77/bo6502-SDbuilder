@@ -6,3 +6,4 @@ __pycache__/
 !songs/*.bin
 .backup/
 full/
+arcade/

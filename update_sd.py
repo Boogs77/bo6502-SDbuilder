@@ -3,13 +3,20 @@
 update_sd.py - takes the games from "MiniVIC Games/bin", the applications from "MiniVIC Apps/bin" and the songs
 from songs/, rebuilds programN.bin and programs.txt and regenerates the SD with make_sd.py.
 
-Two modes:
+Three modes:
   --mode games  (default) games and songs: program1..N.bin, programs.txt and sd.img in this folder; sd.img and
                 the songs are also copied to ../bo6502-emulator/public/, the emulator's default SD. It runs with
                 every BIOS.
   --mode full   games, applications and songs, plus the sample documents of documents.txt: full/program1..N.bin,
                 full/programs.txt and sd_full.img (16 MB) in this folder; nothing is copied to the emulator.
                 The applications need the BIOS KEYB/SD (sector read/write, "[TYPE] Name" serial line).
+  --mode arcade the SD of the Arcade6502 cabinet, from arcade.json of the Arcade Games repository
+                (../Arcade Games/arcade.json): its games in alphabetical order (loaded at $0FD0), the MiniVIC
+                Jukebox (directory name "Jukebox - APP", loaded at $0FD0), the songs when "songs" is "all", the
+                Z-machine stories its games read, and the arcade catalog of the Arcade BIOS from sector 24576
+                (arcade.py): arcade/program1..N.bin, arcade/programs.txt and sd_arcade.img (16 MB) in this folder;
+                nothing is copied to the emulator. arcade.json is checked first with tools/check_catalog.py of
+                that repository; with errors nothing is written.
 
 Menu order: first the games in alphabetical order (plain name, loaded at $0FD0), then (full mode) the applications
 in alphabetical order (" - APP" or " - TOOL", names padded so the dashes line up, loaded at $0FD0), then the songs in the order of songs.txt
@@ -38,21 +45,30 @@ Story area (the miniVIC Z-Machine of the MiniVIC Games): sector 20480 ($00A00000
 +10/+11 checksum, +12/+13 length / 2 (all little endian). Story k is at most 256 sectors (128 KB) from sector
 20480 + 1 + (k-1)*256.
 
+Arcade catalog (version 1, read by the Arcade BIOS front-end): sector 24576 ($00C00000) header "ARCD", version,
+entries, title at +16; index from sector 24577, 32 bytes per entry; page of entry i (8 sectors: text, preview
+patterns and colours) from sector 24576 + 64 + i*8. Details in arcade.py.
+
+The save area (from sector 32768, $01000000) is never written: every image ends there.
+
 Before overwriting, the old files of the mode (programN.bin, programs.txt and the image) are copied to
-.backup/YYYYMMDD-HHMMSS/ (.backup/YYYYMMDD-HHMMSS-full/ in full mode).
+.backup/YYYYMMDD-HHMMSS/ (.backup/YYYYMMDD-HHMMSS-full/ or -arcade/ in the other modes).
 
 Examples:
   python3 update_sd.py --dry-run     # only show what would change
   python3 update_sd.py               # update the files and regenerate sd.img (games only)
   python3 update_sd.py --mode full   # SD with games, applications and documents -> sd_full.img
+  python3 update_sd.py --mode arcade # cabinet SD from arcade.json -> sd_arcade.img
   python3 update_sd.py -- -o '\\\\.\\PhysicalDrive2'   # arguments after -- go to make_sd.py
 """
-import argparse, glob, hashlib, os, re, shutil, subprocess, sys, time
+import argparse, glob, hashlib, json, os, re, shutil, subprocess, sys, time
+import arcade as arc
 
 HERE       = os.path.dirname(os.path.abspath(__file__))
 MINIVIC    = os.path.join(HERE, "..", "MiniVIC Games", "bin")
 APPS       = os.path.join(HERE, "..", "MiniVIC Apps", "bin")
 EMULATOR   = os.path.join(HERE, "..", "bo6502-emulator")
+CATALOG    = os.path.join(HERE, "..", "Arcade Games", "arcade.json")
 GAME_LOAD  = "0FD0"          # NMI trampoline of the MiniVIC games (and applications)
 TYPES      = ("GAME", "APP", "TOOL")   # menu suffix = type in the SD directory
 MAX_PROGS  = 255
@@ -177,6 +193,51 @@ def write_stories(img_path, stories):
         img[p:p + STORY_SECTS * 512] = b + bytes(STORY_SECTS * 512 - len(b))
     open(img_path, "wb").write(img)
 
+def extend_image(img_path):
+    """Pads the image made by make_sd.py to FULL_SIZE (it must end before the document area)."""
+    img = bytearray(open(img_path, "rb").read())
+    if len(img) > DOC_BASE * 512:
+        sys.exit(f"ERROR: {img_path}: the programs reach the document area")
+    img += bytes(FULL_SIZE - len(img))
+    open(img_path, "wb").write(img)
+
+def read_arcade(path, dirs):
+    """arcade.json, checked with tools/check_catalog.py of its repository -> (catalog, checker module)."""
+    if not os.path.isfile(path):
+        sys.exit(f"ERROR: arcade catalog not found: {path}")
+    cat = json.load(open(path, encoding="utf-8"))
+    checker = arc.load_checker(path)
+    from pathlib import Path
+    errors, warnings = checker.check(cat, {k: Path(v) for k, v in dirs.items()})
+    for w in warnings:
+        print("arcade.json warning:", w)
+    for x in errors:
+        print("arcade.json error:", x)
+    if errors:
+        sys.exit(f"ERROR: {len(errors)} errors in {path}: nothing written")
+    for e in cat["entries"]:
+        if re.search(r"[;!@\[\]]", e["name"]):
+            sys.exit(f"ERROR: arcade.json: {e['id']}: the name cannot contain ; ! @ [ ]")
+    return cat, checker
+
+def arcade_pages(cat, checker, catalog_path, slots, songs):
+    """Catalog entries in front-end order: slot, kind, name, page lines and preview."""
+    out = []
+    for e in arc.sort_entries(cat["entries"]):
+        e = dict(e)
+        if e["kind"] == "music" and songs:
+            # the songs on the card, only when they fit in the description lines
+            text = f"{e.get('description', '')} Songs on this card: {', '.join(nm for _, nm, _ in songs)}."
+            if len(checker.wrap(text)) <= checker.DESC_LINES:
+                e["description"] = text
+        pv = None
+        if e.get("preview"):
+            png = os.path.join(os.path.dirname(os.path.abspath(catalog_path)), e["preview"])
+            pv = arc.make_preview(arc.screen_from_png(png))
+        out.append({"slot": slots[e["id"]], "kind": e["kind"], "name": e["name"],
+                    "lines": checker.page_lines(e), "preview": pv})
+    return out
+
 def name_from_file(f):
     return " ".join(w.capitalize() for w in os.path.splitext(f)[0].replace("-", "_").split("_") if w)
 
@@ -212,9 +273,13 @@ def collect(folder, map_path, default_type):
 def main():
     ap = argparse.ArgumentParser(description="Update the BO6502 SD with the MiniVIC games (and applications)",
                                  formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
-    ap.add_argument("--mode", choices=("games", "full"), default="games",
+    ap.add_argument("--mode", choices=("games", "full", "arcade"), default="games",
                     help="games: games and songs -> sd.img, copied to the emulator (default); "
-                    "full: games, applications, songs and documents -> sd_full.img")
+                    "full: games, applications, songs and documents -> sd_full.img; "
+                    "arcade: the cabinet SD of arcade.json, with the arcade catalog -> sd_arcade.img")
+    ap.add_argument("--catalog", default=CATALOG, help="arcade.json, arcade mode (default ../Arcade Games/arcade.json)")
+    ap.add_argument("--arcade", default=None, help="folder with the arcade .bin files, arcade mode "
+                    "(default bin/ next to arcade.json)")
     ap.add_argument("--minivic", default=MINIVIC, help="folder with the game .bin files (default ../MiniVIC Games/bin)")
     ap.add_argument("--apps", default=APPS, help="folder with the application .bin files, full mode "
                     "(default ../MiniVIC Apps/bin)")
@@ -224,23 +289,44 @@ def main():
     ap.add_argument("make_sd_args", nargs=argparse.REMAINDER, help="arguments passed to make_sd.py (after --)")
     a = ap.parse_args()
     full = a.mode == "full"
+    arcade = a.mode == "arcade"
     if not os.path.isdir(a.minivic):
         sys.exit(f"ERROR: games folder not found: {a.minivic}")
     if full and not os.path.isdir(a.apps):
         sys.exit(f"ERROR: applications folder not found: {a.apps}")
-    out = os.path.join(HERE, "full") if full else HERE           # programN.bin and programs.txt
-    img = os.path.join(HERE, "sd_full.img" if full else "sd.img")
+    out = os.path.join(HERE, a.mode) if full or arcade else HERE           # programN.bin and programs.txt
+    img = os.path.join(HERE, {"games": "sd.img", "full": "sd_full.img", "arcade": "sd_arcade.img"}[a.mode])
 
     map_path = os.path.join(HERE, "minivic.txt")
-    games, added, missing = collect(a.minivic, map_path, "GAME")
-    stories = read_stories(os.path.join(HERE, "stories.txt"))
-    full_only = [g for g in games if not full and any(g[0] in progs for _, _, progs in stories)]
-    games = [g for g in games if g not in full_only]
     apps_map = os.path.join(HERE, "apps.txt")
-    apps, apps_added, apps_missing = [], [], []
-    if full:
-        apps, apps_added, apps_missing = collect(a.apps, apps_map, "APP")
+    stories = read_stories(os.path.join(HERE, "stories.txt"))
     songs = read_map(os.path.join(HERE, "songs.txt"))
+    games, added, missing, full_only = [], [], [], []
+    apps, apps_added, apps_missing = [], [], []
+    if arcade:
+        # the programs of arcade.json: games in alphabetical order, then the Jukebox (an application,
+        # its directory name starts with JUKEBOX: the Arcade BIOS finds it so when there is no catalog)
+        a.arcade = a.arcade or os.path.join(os.path.dirname(os.path.abspath(a.catalog)), "bin")
+        dirs = {"minivic": a.minivic, "apps": a.apps, "arcade": a.arcade}
+        cat, checker = read_arcade(a.catalog, dirs)
+        for e in arc.sort_entries(cat["entries"]):
+            path = os.path.join(dirs[e["bin"]["source"]], e["bin"]["file"])
+            if e["kind"] == "game":
+                games.append((path, e["name"], "GAME", e["id"]))
+            else:
+                apps.append((path, "Jukebox", "APP", e["id"]))
+        if cat.get("songs") != "all":
+            songs = []
+        files = {os.path.basename(p) for p, _, _, _ in games + apps}
+        stories = [s for s in stories if files & set(s[2])]
+    else:
+        games, added, missing = collect(a.minivic, map_path, "GAME")
+        full_only = [g for g in games if not full and any(g[0] in progs for _, _, progs in stories)]
+        games = [g for g in games if g not in full_only]
+        if full:
+            apps, apps_added, apps_missing = collect(a.apps, apps_map, "APP")
+        games = [(os.path.join(a.minivic, f), nm, t, None) for f, nm, t in games]
+        apps = [(os.path.join(a.apps, f), nm, t, None) for f, nm, t in apps]
     for f, _, _ in songs:
         if not os.path.isfile(os.path.join(HERE, "songs", f)):
             sys.exit(f"ERROR: song not found: songs/{f}")
@@ -252,7 +338,7 @@ def main():
     # new SD: (menu name, programs.txt entry, data)
     # the menu shows " - APP" / " - TOOL" only: games and songs take their type from a [TYPE] prefix
     # the application names are padded with spaces, so that the dash starts in the same column for all of them
-    width = max((len(nm) for _, nm, _ in apps), default=0)
+    width = max((len(nm) for _, nm, _, _ in apps), default=0)
     def entry(nm, t, load):
         if t in ("APP", "TOOL"):
             name = f"{nm:<{width}} - {t}"
@@ -260,14 +346,18 @@ def main():
         else:
             name, spec = nm, f"![{t}]{nm}"
         return name, spec + (f"@{load}" if load else "")
-    sd = [(*entry(nm, t, GAME_LOAD), open(os.path.join(a.minivic, f), "rb").read()) for f, nm, t in games]
-    sd += [(*entry(nm, t, GAME_LOAD), open(os.path.join(a.apps, f), "rb").read()) for f, nm, t in apps]
+    sd = [(*entry(nm, t, GAME_LOAD), open(p, "rb").read()) for p, nm, t, _ in games]
+    sd += [(*entry(nm, t, GAME_LOAD), open(p, "rb").read()) for p, nm, t, _ in apps]
     sd += [(*entry(nm, "SOUND", None), open(os.path.join(HERE, "songs", f), "rb").read()) for f, nm, _ in songs]
 
     cur = current_sd(out)
-    print(f"Mode {a.mode} -> {os.path.basename(img)}   games from {os.path.normpath(a.minivic)}: {len(games)}   "
-          + (f"applications from {os.path.normpath(a.apps)}: {len(apps)}   " if full else "")
-          + f"songs: {len(songs)}" + (f"   documents: {len(docs)}   stories: {len(stories)}" if full else "") + "\n")
+    if arcade:
+        print(f"Mode arcade -> sd_arcade.img   catalog {os.path.normpath(a.catalog)}: {len(games)} games, "
+              f"{len(apps)} music   songs: {len(songs)}   stories: {len(stories)}\n")
+    else:
+        print(f"Mode {a.mode} -> {os.path.basename(img)}   games from {os.path.normpath(a.minivic)}: {len(games)}   "
+              + (f"applications from {os.path.normpath(a.apps)}: {len(apps)}   " if full else "")
+              + f"songs: {len(songs)}" + (f"   documents: {len(docs)}   stories: {len(stories)}" if full else "") + "\n")
     changes = 0
     for n, (label, _, data) in enumerate(sd, 1):
         old = cur.pop(label.upper(), None)
@@ -280,7 +370,7 @@ def main():
     for k, (f, t, name) in enumerate(docs, 1):
         print(f"doc {k:>2}  {name:<12} {next(x for x, v in DOC_TYPES.items() if v == t):<7}"
               f"{os.path.getsize(os.path.join(HERE, 'documents', f)):>6} bytes  documents/{f}")
-    for f, k, _ in stories if full else []:
+    for f, k, _ in stories if full or arcade else []:
         print(f"story {k}  {os.path.getsize(os.path.join(HERE, 'stories', f)):>6} bytes  stories/{f}")
     for f, nm, _ in full_only:
         print(f"{nm} ({f}) reads a story: only in the full SD")
@@ -298,6 +388,15 @@ def main():
     if a.dry_run:
         return
 
+    extra = [x for x in a.make_sd_args if x != "--"]
+    to_img = "-o" not in extra and "--output" not in extra       # (otherwise make_sd.py writes elsewhere)
+    if arcade:
+        if not to_img:
+            sys.exit("ERROR: output given with -o: the arcade catalog is written only into sd_arcade.img")
+        print("Building the arcade catalog (previews from the PNG files)...", flush=True)
+        slots = {i: n for n, (_, _, _, i) in enumerate(games + apps)}
+        pages = arcade_pages(cat, checker, a.catalog, slots, songs)
+
     if added:
         with open(map_path, "a", encoding="utf-8") as fp:
             for f, nm, _ in added:
@@ -314,7 +413,7 @@ def main():
     os.makedirs(out, exist_ok=True)
     old_bins = glob.glob(os.path.join(out, "program*.bin"))
     old_bins = [p for p in old_bins if re.fullmatch(r"program\d+\.bin", os.path.basename(p))]
-    bak = os.path.join(HERE, ".backup", time.strftime("%Y%m%d-%H%M%S") + ("-full" if full else ""))
+    bak = os.path.join(HERE, ".backup", time.strftime("%Y%m%d-%H%M%S") + ("" if a.mode == "games" else "-" + a.mode))
     os.makedirs(bak)
     for p in old_bins + [os.path.join(out, "programs.txt"), img]:
         if os.path.isfile(p):
@@ -326,12 +425,23 @@ def main():
     open(os.path.join(out, "programs.txt"), "w", encoding="utf-8").write("".join(e + ";\n" for _, e, _ in sd))
     print(f"Backup in {bak}\n", flush=True)
 
-    extra = [x for x in a.make_sd_args if x != "--"]
-    to_img = "-o" not in extra and "--output" not in extra       # (otherwise make_sd.py writes elsewhere)
     rc = subprocess.call([sys.executable, os.path.join(HERE, "make_sd.py"), "-d", out,
                           "-l", os.path.join(out, "programs.txt"), "-o", img] + extra, cwd=HERE)
     if rc:
         sys.exit(rc)
+
+    if arcade:
+        extend_image(img)
+        write_stories(img, stories)
+        data = bytearray(open(img, "rb").read())
+        end = arc.write_catalog(data, cat["title"], pages)
+        if len(data) != FULL_SIZE:
+            sys.exit("ERROR: the image grew past the save area")
+        open(img, "wb").write(data)
+        print(f"{len(stories)} stories written from sector {STORY_BASE}")
+        print(f"Arcade catalog \"{cat['title']}\": {len(pages)} entries, sectors {arc.CAT_LBA}-{end - 1}; "
+              f"{os.path.basename(img)} is {FULL_SIZE // 1024 // 1024} MB (use it with the Arcade BIOS)")
+        return
 
     if full:
         if to_img:
