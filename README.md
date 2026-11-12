@@ -50,7 +50,7 @@ python3 update_sd.py --mode full             # full/program1..N.bin, full/progra
 |---|---|---|---|
 | `games` (default) | games, songs | `sd.img`, copied to the emulator | any |
 | `full` | games, applications of [miniVIC Apps](https://github.com/Boogs77/miniVIC_apps), songs, sample documents | `sd_full.img`, not copied | KEYB/SD |
-| `arcade` | the cabinet games of `arcade.json`, MiniVIC Jukebox, songs, arcade catalog | `sd_arcade.img`, not copied | Arcade BIOS |
+| `arcade` | the cabinet games of `arcade.json`, MiniVIC Jukebox, songs, arcade catalog | `sd_arcade.img`, copied gzipped to the emulator (`public/sd_arcade.img.gz`) | Arcade BIOS |
 
 The menu lists the games, then the applications (` - APP` or ` - TOOL`, the names padded with spaces so that the dashes line up), then the songs; games and songs show their plain name (type GAME / SOUND from a `[TYPE]` prefix in `programs.txt`). New applications found
 in `../MiniVIC Apps/bin` are appended to `apps.txt`: fix the name there and mark the tools with `[TOOL]`.
@@ -104,6 +104,7 @@ which is checked first with `tools/check_catalog.py` of that repository: with er
 | `... + 4` to `+ 6` | preview colours: 192 x 8 bytes (foreground << 4 \| background) |
 | `32768` ... | save area, never written (see below) |
 
+Each build also writes a gzipped copy to `../bo6502-emulator/public/sd_arcade.img.gz` (`--emulator ''` skips it).
 In the emulator, load the Arcade BIOS with "Load ROM .bin" and `sd_arcade.img` with "Insert .img image".
 
 ## Save area: game records

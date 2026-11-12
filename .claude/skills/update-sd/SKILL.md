@@ -1,6 +1,6 @@
 ---
 name: update-sd
-description: Checks "MiniVIC Games/bin" for new or updated games and regenerates the BO6502 SD (program*.bin, programs.txt, sd.img), then copies it into the emulator project. Use it when the user asks to update or rebuild the SD ("aggiorna la SD", "rifai l'SD"), to add the new MiniVIC games, or to check what changed compared with the current SD.
+description: Checks "MiniVIC Games/bin" for new or updated games and regenerates the BO6502 SD (program*.bin, programs.txt, sd.img), then copies it into the emulator project; also rebuilds the Arcade6502 cabinet SD (sd_arcade.img, --mode arcade) from arcade.json of Arcade Games. Use it when the user asks to update or rebuild the SD ("aggiorna la SD", "rifai l'SD", "SD arcade", "SD del cabinato"), to add the new MiniVIC games, when arcade.json, its previews or the cabinet games change, or to check what changed compared with the current SD.
 ---
 
 # Updating the SD with the MiniVIC games
@@ -46,6 +46,22 @@ All the work is done by `update_sd.py`, in the project folder. Never renumber th
 - Everything written to files and commit messages is in English; talk to the user in Italian. In the final summary
   list: games added, updated or removed, total number of programs and menu pages, verify result.
 - Update the session diary with the `session-log` skill.
+
+## Cabinet SD (`--mode arcade`)
+
+Rebuild it whenever `../Arcade Games/arcade.json`, its `previews/`, a game it lists or `songs.txt` changes:
+
+1. `python update_sd.py --mode arcade --dry-run`: checks `arcade.json` with `tools/check_catalog.py` of Arcade
+   Games (with errors nothing is written; fix them there, not from here) and lists the programs.
+2. `python update_sd.py --mode arcade`: writes `arcade/program*.bin`, `arcade/programs.txt` and `sd_arcade.img`
+   (16 MB, catalog from sector 24576) and **always** copies it gzipped to
+   `../bo6502-emulator/public/sd_arcade.img.gz`. The output must end with `Verify OK`, `Arcade catalog ...` and
+   `Also copied to ...sd_arcade.img.gz`. Never skip the copy (`--emulator ''`) unless the user asks.
+3. Optional check: `node test/run.mjs` in `../Arcade BIOS` reads `tmp/sd_arcade.img`; copy the new image there
+   only for the test and put the old one back.
+
+The `games` and `full` modes do not change with it. Commit `public/sd_arcade.img.gz` in the emulator repo only
+when the user asks (it is published by GitHub Pages).
 
 ## Files
 

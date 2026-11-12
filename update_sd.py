@@ -15,7 +15,8 @@ Three modes:
                 Jukebox (directory name "Jukebox - APP", loaded at $0FD0), the songs when "songs" is "all", the
                 Z-machine stories its games read, and the arcade catalog of the Arcade BIOS from sector 24576
                 (arcade.py): arcade/program1..N.bin, arcade/programs.txt and sd_arcade.img (16 MB) in this folder;
-                nothing is copied to the emulator. arcade.json is checked first with tools/check_catalog.py of
+                a gzipped copy goes to ../bo6502-emulator/public/sd_arcade.img.gz (--emulator '' to skip it).
+                arcade.json is checked first with tools/check_catalog.py of
                 that repository; with errors nothing is written.
 
 Menu order: first the games in alphabetical order (plain name, loaded at $0FD0), then (full mode) the applications
@@ -61,7 +62,7 @@ Examples:
   python3 update_sd.py --mode arcade # cabinet SD from arcade.json -> sd_arcade.img
   python3 update_sd.py -- -o '\\\\.\\PhysicalDrive2'   # arguments after -- go to make_sd.py
 """
-import argparse, glob, hashlib, json, os, re, shutil, subprocess, sys, time
+import argparse, glob, gzip, hashlib, json, os, re, shutil, subprocess, sys, time
 import arcade as arc
 
 HERE       = os.path.dirname(os.path.abspath(__file__))
@@ -283,7 +284,8 @@ def main():
     ap.add_argument("--minivic", default=MINIVIC, help="folder with the game .bin files (default ../MiniVIC Games/bin)")
     ap.add_argument("--apps", default=APPS, help="folder with the application .bin files, full mode "
                     "(default ../MiniVIC Apps/bin)")
-    ap.add_argument("--emulator", default=EMULATOR, help="emulator project to copy sd.img into, games mode "
+    ap.add_argument("--emulator", default=EMULATOR, help="emulator project to copy sd.img (games mode) or "
+                    "sd_arcade.img.gz (arcade mode) into "
                     "(default ../bo6502-emulator; '' to skip the copy)")
     ap.add_argument("--dry-run", action="store_true", help="show the differences without writing anything")
     ap.add_argument("make_sd_args", nargs=argparse.REMAINDER, help="arguments passed to make_sd.py (after --)")
@@ -441,6 +443,13 @@ def main():
         print(f"{len(stories)} stories written from sector {STORY_BASE}")
         print(f"Arcade catalog \"{cat['title']}\": {len(pages)} entries, sectors {arc.CAT_LBA}-{end - 1}; "
               f"{os.path.basename(img)} is {FULL_SIZE // 1024 // 1024} MB (use it with the Arcade BIOS)")
+        # gzipped copy in the emulator (public/sd_arcade.img.gz, like sd_full.img.gz); mtime 0: same image, same file
+        pub = os.path.join(a.emulator, "public")
+        if a.emulator and os.path.isdir(pub):
+            open(os.path.join(pub, "sd_arcade.img.gz"), "wb").write(gzip.compress(bytes(data), 9, mtime=0))
+            print(f"Also copied to {os.path.normpath(os.path.join(pub, 'sd_arcade.img.gz'))}")
+        elif a.emulator:
+            print(f"WARNING: emulator not found ({os.path.normpath(pub)}): sd_arcade.img not copied")
         return
 
     if full:
