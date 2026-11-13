@@ -1,6 +1,7 @@
 ![GAME]1vs1@0FD0;
 ![GAME]Asteroids@0FD0;
 ![GAME]Breakout@0FD0;
+![GAME]Brick Drop@0FD0;
 ![GAME]Bubbles@0FD0;
 ![GAME]Centipede@0FD0;
 ![GAME]Cheese Chase@0FD0;
