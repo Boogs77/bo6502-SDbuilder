@@ -41,6 +41,7 @@
 ![GAME]The Final Countdown@0FD0;
 ![GAME]The Warriors@0FD0;
 ![GAME]Times Tables@0FD0;
+![GAME]Turbo Horizon@0FD0;
 ![GAME]Warlords@0FD0;
 ![GAME]Wormer@0FD0;
 ![SOUND]Imperial March;
