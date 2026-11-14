@@ -51,3 +51,4 @@ cheese_chase.bin = Cheese Chase
 haunted_keep.bin = Haunted Keep
 pastry_panic.bin = Pastry Panic
 brick_drop.bin = Brick Drop
+turbo_horizon.bin = Turbo Horizon
