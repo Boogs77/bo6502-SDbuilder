@@ -2,11 +2,14 @@
 """
 arcade.py - the arcade catalog of the Arcade6502 cabinet SD (used by "update_sd.py --mode arcade").
 
-The catalog is read by the front-end of the Arcade BIOS (ARCADE.md of arcade_bios). Version 1:
+The catalog is read by the front-end of the Arcade BIOS (ARCADE.md of arcade_bios). Version 2:
 
-  sector 24576 ($00C00000)  header: "ARCD", version 1, number of entries N (1-255); title at +16 (31 chars + $00)
+  sector 24576 ($00C00000)  header: "ARCD", version 2, number of entries N (1-255); title at +16 (31 chars + $00)
   sector 24577 ...          index, 32 bytes per entry: +0 SD slot, +1 kind (1 game, 2 music), +2 flags
-                            (bit 0 preview, bit 1 text), +8 name (23 chars + $00); +3..+7 are 0
+                            (bit 0 preview, bit 1 text), +3 credits (bit 0 COIN by default, bit 1 the game
+                            handles the credits, bit 2 uses START, bit 3 uses button 3), +4 save zone
+                            (0 = none), +8 name (23 chars + $00); +5..+7 are 0
+                            (version 1 had +3..+7 = 0: every entry in free play, no zone)
   24576 + 64 + i*8          page of entry i: sector 0 = 16 text lines of 32 bytes, sectors 1-3 = preview patterns
                             (192 tiles of 8 bytes, 16 x 12 by rows), sectors 4-6 = preview colours (fg << 4 | bg)
 
@@ -18,6 +21,7 @@ with 2 colours per 8-pixel row (same rules as tools/arcade_sd.ts of arcade_bios)
 import importlib.util, os, struct, zlib
 
 CAT_LBA    = 24576           # sector of the catalog header
+CAT_VER    = 2
 PAGE_OFS   = 64              # pages start 64 sectors after the header
 PAGE_SECTS = 8
 SAVE_LBA   = 32768           # save area: never written
@@ -159,9 +163,16 @@ def sort_entries(entries):
     return sorted(entries, key=lambda e: (e["kind"] == "music", e["name"].casefold()))
 
 
+def credit_flags(e):
+    """index byte +3 from the credits and controls of an arcade.json entry"""
+    cr, ct = e.get("credits") or {}, e.get("controls") or {}
+    return ((1 if cr.get("default") == "coin" else 0) | (2 if cr.get("mode") == "game" else 0)
+            | (4 if ct.get("start") else 0) | (8 if (ct.get("buttons") or 0) >= 3 else 0))
+
+
 def write_catalog(img, title, entries):
     """Writes the catalog into the image (bytearray). entries: dicts with slot, kind, name, lines, preview
-    ((patterns, colours) or None), in front-end order."""
+    ((patterns, colours) or None), zone (or None), credits and controls (arcade.json), in front-end order."""
     if not 1 <= len(entries) <= 255:
         raise SystemExit(f"ERROR: {len(entries)} catalog entries, 1-255")
     end = CAT_LBA + PAGE_OFS + len(entries) * PAGE_SECTS
@@ -169,7 +180,7 @@ def write_catalog(img, title, entries):
         raise SystemExit("ERROR: the catalog does not fit before the save area")
     base = CAT_LBA * SECTOR
     img[base:base + PAGE_OFS * SECTOR] = bytes(PAGE_OFS * SECTOR)
-    img[base:base + 6] = b"ARCD" + bytes([1, len(entries)])
+    img[base:base + 6] = b"ARCD" + bytes([CAT_VER, len(entries)])
     t = title.encode("ascii")[:31]
     img[base + 16:base + 16 + len(t)] = t
     for i, e in enumerate(entries):
@@ -177,6 +188,8 @@ def write_catalog(img, title, entries):
         img[o] = e["slot"]
         img[o + 1] = KINDS[e["kind"]]
         img[o + 2] = (1 if e["preview"] else 0) | (2 if e["lines"] else 0)
+        img[o + 3] = credit_flags(e)
+        img[o + 4] = e.get("zone") or 0
         n = e["name"].encode("ascii")[:23]
         img[o + 8:o + 8 + len(n)] = n
         p = (CAT_LBA + PAGE_OFS + i * PAGE_SECTS) * SECTOR

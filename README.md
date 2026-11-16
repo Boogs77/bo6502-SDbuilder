@@ -88,17 +88,18 @@ which is checked first with `tools/check_catalog.py` of that repository: with er
   `--minivic`, `apps` = `--apps`, `arcade` = `--arcade` (default `bin/` next to `arcade.json`). No applications,
   no keyboard versions, no documents.
 - Stories: the Z-machine stories of `stories.txt` that the cabinet games read (the joystick versions of Zork).
-- Catalog (version 1): list, text page and 128x96 preview of every entry, in alphabetical order with the music entry
+- Catalog (version 2): list, text page and 128x96 preview of every entry, in alphabetical order with the music entry
   last. The page lines come from `inspired`, `maker`, `players` and `description` (the rules of
   `check_catalog.py`); the preview is the PNG of `preview` (512x384 or 256x192) reduced to the TMS9918A colours,
-  2 colours per 8-pixel row. `zone`, `controls` and `credits` are checked but not written yet (catalog version 2).
+  2 colours per 8-pixel row. `zone`, `controls` and `credits` go into the index bytes `+3` and `+4`: the Arcade BIOS
+  uses them for the credits (FREE PLAY or COIN, chosen per game in its system test).
 
 | Sector | Contents |
 |---|---|
 | `0` ... | program blocks (64 sectors each), directory in the first sector of the first blocks |
 | `20480` (`$00A00000`) | Z-machine story index `"ZSTO"`, stories from `20481` (256 sectors each) |
-| `24576` (`$00C00000`) | catalog header: `"ARCD"`, version `1`, entries N (1-255); cabinet title at `+16` (31 characters + `$00`) |
-| `24577` ... | index, 32 bytes per entry: `+0` SD slot, `+1` kind (1 game, 2 music), `+2` flags (bit 0 preview, bit 1 text), `+8` name (23 characters + `$00`); `+3`-`+7` are 0 |
+| `24576` (`$00C00000`) | catalog header: `"ARCD"`, version `2`, entries N (1-255); cabinet title at `+16` (31 characters + `$00`) |
+| `24577` ... | index, 32 bytes per entry: `+0` SD slot, `+1` kind (1 game, 2 music), `+2` flags (bit 0 preview, bit 1 text), `+3` credits (bit 0 `credits.default` is `coin`, bit 1 `credits.mode` is `game`, bit 2 `controls.start`, bit 3 three buttons), `+4` `zone` (0 = none), `+8` name (23 characters + `$00`); `+5`-`+7` are 0. Version 1 (Arcade BIOS 12.11.26) had `+3`-`+7` = 0 |
 | `24576 + 64 + i*8` | page of entry i: 16 text lines of 32 bytes (line 0 inspiring game, line 1 maker / players, then the description at 30 columns) |
 | `... + 1` to `+ 3` | preview patterns: 192 tiles (16 x 12, by rows) of 8 bytes |
 | `... + 4` to `+ 6` | preview colours: 192 x 8 bytes (foreground << 4 \| background) |
@@ -116,6 +117,7 @@ right after the end of `sd_full.img`: writing an image with `dd` / Win32 Disk Im
 | Sectors | Contents |
 |---|---|
 | `32768 + z*16` ... `+15` | zone `z` (0-255): one per game (1-127) or application (128-255), fixed numbers |
+| `32769` (zone 0, sector 1) | settings of the Arcade BIOS: `"ARCS"`, version 1, at `+16 + z` FREE PLAY / COIN of the game of zone `z` (0 = as the catalog, 1 = FREE PLAY, 2 = COIN), 16-bit sum at `+510` |
 | zone sectors 0 and 1 | records, two copies written in turn: `"MVSV"`, version 1, zone, type 1, tables, rows, row size 8, write counter, game name (16 chars) at `+16`, rows at `+32` (BCD score low byte first, 3 initials, extra byte), 16-bit sum at `+510` |
 | zone sectors 2-15 | free for the game (saved games) |
 

@@ -236,7 +236,8 @@ def arcade_pages(cat, checker, catalog_path, slots, songs):
             png = os.path.join(os.path.dirname(os.path.abspath(catalog_path)), e["preview"])
             pv = arc.make_preview(arc.screen_from_png(png))
         out.append({"slot": slots[e["id"]], "kind": e["kind"], "name": e["name"],
-                    "lines": checker.page_lines(e), "preview": pv})
+                    "lines": checker.page_lines(e), "preview": pv, "zone": e.get("zone"),
+                    "credits": e.get("credits"), "controls": e.get("controls")})
     return out
 
 def name_from_file(f):
