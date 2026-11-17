@@ -9,7 +9,7 @@ and loads into RAM.
 | File | Description |
 |---|---|
 | `make_sd.py` | Builds the `sd.img` image or writes directly to the card |
-| `update_sd.py` | Builds the SD in one of three modes: `--mode games` (default) takes the games from `../MiniVIC Games/bin` and the songs from `songs/`, runs `make_sd.py` and copies `sd.img` and the songs to `../bo6502-emulator/public/` (the emulator's default SD); `--mode full` also adds the applications of `../MiniVIC Apps/bin` and the sample documents, and writes `sd_full.img`; `--mode arcade` builds the SD of the Arcade6502 cabinet, `sd_arcade.img`, from `arcade.json` of [Arcade Games](https://github.com/Boogs77/arcade_games). `--dry-run` only shows what changes |
+| `update_sd.py` | Builds the SD in one of three modes: `--mode games` (default) takes the games from `../MiniVIC Games/bin` and the songs from `songs/`, runs `make_sd.py` and copies `sd.img` and the songs to `../bo6502-emulator/public/` (the emulator's default SD); `--mode full` also adds the applications of `../MiniVIC Apps/bin` and the sample documents, and writes `sd_full.img`; `--mode arcade` builds the SD of the Arcade6502 cabinet, `sd_arcade.img`, from `arcade.json` of the Arcade Games project (a separate, private repository: see [Arcade SD](#arcade-sd-the-arcade6502-cabinet)). `--dry-run` only shows what changes |
 | `arcade.py` | Arcade catalog of the cabinet SD (list, game pages, 128x96 previews from the PNG pictures), used by `update_sd.py --mode arcade` |
 | `saves.py` | Save area of the card (game records, saved games, from 16 MB): `export` to Markdown, CSV or JSON, `import` of a JSON export, `clear` (see below) |
 | `minivic.txt` / `apps.txt` / `songs.txt` | Menu name of each MiniVIC game, application and song (`file.bin = Name`; `file.bin = [TOOL] Name` for a tool) |
@@ -19,7 +19,7 @@ and loads into RAM.
 | `ex.cfg` | ld65 configuration: code at `$1000`, at most `$7000` bytes |
 | `bios_jt.inc` | Fixed addresses of the BIOS jump table (`$FD00`–`$FD15`) |
 | `build.py` | Assembles `prog.s` into `program1..4.bin` (needs cc65) |
-| `songs/` | Backup copy of the songs (Imperial March, The Final Countdown, Super Mario Bros; the songs of [miniVIC_music](https://github.com/Boogs77/miniVIC_music), built in ../MiniVIC Sound; MiniVIC Jukebox, which plays them all, is an application: `jukebox.bin` of ../MiniVIC Apps/bin) |
+| `songs/` | The songs of the SD, as AY-3-8910 player programs: the 16 songs of [miniVIC_music](https://github.com/Boogs77/miniVIC_music) (built in ../MiniVIC Sound) and three more kept only here, Imperial March, The Final Countdown and Super Mario Bros (see [Credits](#credits)). MiniVIC Jukebox, which plays them all, is an application: `jukebox.bin` of ../MiniVIC Apps/bin |
 
 The program binaries (`programN.bin`) and the `.img` images are not in the repository: put them in the folder
 before running the script, or generate them with `update_sd.py` or `build.py`. To use a song from `songs/` by
@@ -81,6 +81,9 @@ python3 update_sd.py --mode arcade             # arcade/program1..N.bin, arcade/
 The cabinet SD is read by the front-end of the [Arcade BIOS](https://github.com/Boogs77/arcade_bios). Its contents
 come from `arcade.json` of the Arcade Games repository (default `../Arcade Games/arcade.json`, option `--catalog`),
 which is checked first with `tools/check_catalog.py` of that repository: with errors nothing is written.
+
+> **Note:** the Arcade Games repository is private, so this mode only works with a copy of it next to this folder.
+> The `games` and `full` modes do not need it.
 
 - Programs: the games of `arcade.json` in alphabetical order (type GAME, loaded at `$0FD0`), then MiniVIC Jukebox
   (` - APP`, loaded at `$0FD0`: the Arcade BIOS finds it by the name `JUKEBOX` when the card has no catalog),
@@ -233,3 +236,15 @@ ld65 -C ex.cfg p1.o -o program1.bin
 
 > **Warning:** `build.py` overwrites `program1.bin`..`program4.bin`. If those slots already hold other programs,
 > run it in a separate folder.
+
+## Credits
+
+- **Zork I, II and III** (`stories/`): Infocom, 1980-1982; released by Microsoft under the MIT License in 2025
+  (`stories/zork*.LICENSE`).
+- **Songs** (`songs/`): note-by-note arrangements for the AY-3-8910, made for this hobby project. The classical
+  pieces (Mozart, Rossini, Grieg, Offenbach, Bach, Joplin, Beethoven, Rimsky-Korsakov) and Korobeiniki are in the
+  public domain; Arcade Start, Dungeon Boss, High Score, Jingles, Maze Chase, Neon Drive and Star Patrol are original.
+  Three songs are arrangements of works that are still under copyright and belong to their owners:
+  *Imperial March* (John Williams, Star Wars), *The Final Countdown* (Joey Tempest, Europe) and the
+  *Super Mario Bros.* theme (Koji Kondo, Nintendo). They are shared for non-commercial, educational use; they
+  will be removed if the rights holders ask.
