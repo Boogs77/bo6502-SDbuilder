@@ -9,7 +9,7 @@ and loads into RAM.
 | File | Description |
 |---|---|
 | `make_sd.py` | Builds the `sd.img` image or writes directly to the card |
-| `update_sd.py` | Builds the SD in one of three modes: `--mode games` (default) takes the games from `../MiniVIC Games/bin` and the songs from `songs/`, runs `make_sd.py` and copies `sd.img` and the songs to `../bo6502-emulator/public/` (the emulator's default SD); `--mode full` also adds the applications of `../MiniVIC Apps/bin` and the sample documents, and writes `sd_full.img`; `--mode arcade` builds the SD of the Arcade6502 cabinet, `sd_arcade.img`, from `arcade.json` of the Arcade Games project (a separate, private repository: see [Arcade SD](#arcade-sd-the-arcade6502-cabinet)). `--dry-run` only shows what changes |
+| `update_sd.py` | Builds the SD in one of three modes: `--mode games` (default) takes the games from `../MiniVIC Games/bin` and the songs from `songs/`, runs `make_sd.py` and copies `sd.img` and the songs to `../bo6502-emulator/public/` (the emulator's default SD); `--mode full` also adds the applications of `../MiniVIC Apps/bin` and the sample documents, and writes `sd_full.img`; `--mode arcade` builds the SD of the Arcade6502 cabinet, `sd_arcade.img`, from `arcade.json` of [Arcade Games](https://github.com/Boogs77/arcade_games). `--dry-run` only shows what changes |
 | `arcade.py` | Arcade catalog of the cabinet SD (list, game pages, 128x96 previews from the PNG pictures), used by `update_sd.py --mode arcade` |
 | `saves.py` | Save area of the card (game records, saved games, from 16 MB): `export` to Markdown, CSV or JSON, `import` of a JSON export, `clear` (see below) |
 | `minivic.txt` / `apps.txt` / `songs.txt` | Menu name of each MiniVIC game, application and song (`file.bin = Name`; `file.bin = [TOOL] Name` for a tool) |
@@ -82,7 +82,7 @@ The cabinet SD is read by the front-end of the [Arcade BIOS](https://github.com/
 come from `arcade.json` of the Arcade Games repository (default `../Arcade Games/arcade.json`, option `--catalog`),
 which is checked first with `tools/check_catalog.py` of that repository: with errors nothing is written.
 
-> **Note:** the Arcade Games repository is private, so this mode only works with a copy of it next to this folder.
+> **Note:** this mode needs a copy of [Arcade Games](https://github.com/Boogs77/arcade_games) next to this folder.
 > The `games` and `full` modes do not need it.
 
 - Programs: the games of `arcade.json` in alphabetical order (type GAME, loaded at `$0FD0`), then MiniVIC Jukebox
